@@ -31,8 +31,17 @@ export const authenticate = (
   }
 
   try {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      res.status(500).json({
+        success: false,
+        error: { message: 'Server configuration error' },
+      });
+      return;
+    }
+    
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+    const decoded = jwt.verify(token, secret) as any;
     req.user = {
       id: decoded.id,
       email: decoded.email,
