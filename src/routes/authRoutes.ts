@@ -2,6 +2,8 @@ import express from 'express';
 import passport from 'passport';
 import { register, login, getMe } from '@/controllers/authController';
 import { authenticate } from '@/middleware/auth';
+import { validateBody } from '@/middleware/validation';
+import { registerSchema, loginSchema } from '@/schemas/authSchemas';
 import { IUser } from '@/models/User';
 import { generateToken } from '@/utils/jwt';
 
@@ -10,12 +12,12 @@ const router = express.Router();
 // @desc    Register user
 // @route   POST /api/auth/register
 // @access  Public
-router.post('/register', register);
+router.post('/register', validateBody(registerSchema), register);
 
 // @desc    Login user
 // @route   POST /api/auth/login
 // @access  Public
-router.post('/login', login);
+router.post('/login', validateBody(loginSchema), login);
 
 // @desc    Get current user
 // @route   GET /api/auth/me

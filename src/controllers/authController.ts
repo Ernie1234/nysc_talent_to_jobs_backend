@@ -1,10 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import User, { IUser } from '@/models/User';
-import { CreateUserDto, LoginDto, AuthResponse } from '@/types/user';
+import { AuthResponse } from '@/types/user';
+import { RegisterInput, LoginInput } from '@/schemas/authSchemas';
 import { generateToken } from '@/utils/jwt';
 
 export const register = async (
-  req: Request<{}, AuthResponse, CreateUserDto>,
+  req: Request<{}, AuthResponse, RegisterInput>,
   res: Response<AuthResponse>,
   next: NextFunction
 ): Promise<void> => {
@@ -58,7 +59,7 @@ export const register = async (
 };
 
 export const login = async (
-  req: Request<{}, AuthResponse, LoginDto>,
+  req: Request<{}, AuthResponse, LoginInput>,
   res: Response<AuthResponse>,
   next: NextFunction
 ): Promise<void> => {
