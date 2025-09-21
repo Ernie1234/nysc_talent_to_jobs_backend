@@ -1,0 +1,119 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run type checking
+        run: npm run build
+
+      - name: Run tests
+        run: npm run test:coverage
+        env:
+          NODE_ENV: test
+          JWT_SECRET: test-jwt-secret-for-ci
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        if: matrix.node-version == '20.x'
+        with:
+          file: ./coverage/lcov.info
+          flags: backend
+          name: backend-coverage
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist/
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [test, build]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: dist
+          path: dist/
+
+      # Add your deployment steps here
+      # Example for Railway deployment:
+      # - name: Deploy to Railway
+      #   uses: railway-deploy@v1
+      #   with:
+      #     token: ${{ secrets.RAILWAY_TOKEN }}
+      #     service: your-service-name
+
+      # Example for Heroku deployment:
+      # - name: Deploy to Heroku
+      #   uses: akhileshns/heroku-deploy@v3.12.12
+      #   with:
+      #     heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+      #     heroku_app_name: your-app-name
+      #     heroku_email: your-email@example.com
+
+      # Example for DigitalOcean App Platform:
+      # - name: Deploy to DigitalOcean
+      #   uses: digitalocean/app_action@v1.1.5
+      #   with:
+      #     app_name: your-app-name
+      #     token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Deployment placeholder
+        run: |
+          echo "🚀 Deployment step - replace this with your actual deployment commands"
+          echo "📦 Built files are available in the dist/ directory"
+          ls -la dist/
