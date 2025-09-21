@@ -3,6 +3,7 @@ import User, { IUser } from '@/models/User';
 import { AuthResponse } from '@/types/user';
 import { RegisterInput, LoginInput } from '@/schemas/authSchemas';
 import { generateToken } from '@/utils/jwt';
+import { AuthenticatedRequest } from '@/types/express';
 
 export const register = async (
   req: Request<{}, AuthResponse, RegisterInput>,
@@ -122,26 +123,30 @@ export const login = async (
 };
 
 export const getMe = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
+    // This check is still good for runtime safety
     if (!req.user) {
+      // FIX: Removed 'return'
       res.status(401).json({
         success: false,
         error: { message: 'Not authenticated' },
       });
-      return;
+      return; // Use a standalone return to exit
     }
 
-    const user = await User.findById({ _id: req.user.id as string });
+    const user = await User.findById(req.user._id);
+
     if (!user) {
+      // FIX: Removed 'return'
       res.status(404).json({
         success: false,
         error: { message: 'User not found' },
       });
-      return;
+      return; // Use a standalone return to exit
     }
 
     res.status(200).json({

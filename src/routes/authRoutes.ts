@@ -1,10 +1,9 @@
-import express from 'express';
+import express, { RequestHandler } from 'express';
 import passport from 'passport';
 import { register, login, getMe } from '@/controllers/authController';
 import { authenticate } from '@/middleware/auth';
 import { validateBody } from '@/middleware/validation';
 import { registerSchema, loginSchema } from '@/schemas/authSchemas';
-import { IUser } from '@/models/User';
 import { generateToken } from '@/utils/jwt';
 
 const router = express.Router();
@@ -22,30 +21,34 @@ router.post('/login', validateBody(loginSchema), login);
 // @desc    Get current user
 // @route   GET /api/auth/me
 // @access  Private
-router.get('/me', authenticate, getMe);
+router.get('/me', authenticate, getMe as RequestHandler);
 
 // Google OAuth Routes
 
 // @desc    Initiate Google OAuth
 // @route   GET /api/auth/google
 // @access  Public
-router.get('/google', 
-  passport.authenticate('google', { 
-    scope: ['profile', 'email'] 
+router.get(
+  '/google',
+  passport.authenticate('google', {
+    scope: ['profile', 'email'],
   })
 );
 
 // @desc    Google OAuth callback
 // @route   GET /api/auth/google/callback
 // @access  Public
-router.get('/google/callback',
+router.get(
+  '/google/callback',
   passport.authenticate('google', { session: false }),
   (req, res) => {
     try {
-      const user = req.user as IUser;
-      
+      const user = req.user;
+
       if (!user) {
-        return res.redirect(`${process.env.FRONTEND_URL}/login?error=authentication_failed`);
+        return res.redirect(
+          `${process.env.FRONTEND_URL}/login?error=authentication_failed`
+        );
       }
 
       // Generate JWT token

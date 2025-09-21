@@ -15,6 +15,7 @@ import { errorHandler } from '@/middleware/errorHandler';
 import { notFound } from '@/middleware/notFound';
 import authRoutes from '@/routes/authRoutes';
 import userRoutes from '@/routes/userRoutes';
+import Logger from './utils/logger';
 
 // Connect to database
 connectDB();
@@ -68,6 +69,11 @@ app.use(passport.session());
 // Logging middleware
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.send('Welcome to the NYSC Talents to Jobs API');
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({
@@ -78,8 +84,8 @@ app.get('/health', (req, res) => {
 });
 
 // API routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
+app.use('/api/V1/auth', authRoutes);
+app.use('/api/V1/users', userRoutes);
 
 // 404 handler
 app.use(notFound);
@@ -90,8 +96,8 @@ app.use(errorHandler);
 // Start server
 if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
-    console.log(`🚀 Server running on port http://localhost:${PORT}`);
-    console.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`);
+    Logger.info(`🚀 Server running on port http://localhost:${PORT}`);
+    Logger.info(`📚 Environment: ${process.env.NODE_ENV || 'development'}`);
   });
 }
 

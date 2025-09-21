@@ -1,9 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { UpdateUserDto } from '@/types/user';
+import User from '@/models/User';
 
-// Mock user storage (replace with actual database)
-const users: any[] = [];
-
+/**
+ * @desc    Get all users
+ * @route   GET /api/V1/users
+ * @access  Private (Admin only)
+ */
 export const getUsers = async (
   req: Request,
   res: Response,
@@ -11,21 +14,29 @@ export const getUsers = async (
 ): Promise<void> => {
   try {
     // Remove passwords from response
-    const usersWithoutPassword = users.map(user => {
-      const { password, ...userWithoutPassword } = user;
-      return userWithoutPassword;
+    const users = await User.find().select('-password');
+    res.status(200).json({
+      success: true,
+      count: users.length,
+      data: users,
     });
 
     res.status(200).json({
       success: true,
-      count: usersWithoutPassword.length,
-      data: usersWithoutPassword,
+      count: users.length,
+      message: 'Users retrieved successfully',
+      data: users,
     });
   } catch (error) {
     next(error);
   }
 };
 
+/**
+ * @desc    Get a single user by ID
+ * @route   GET /api/V1/users/:id
+ * @access  Private
+ */
 export const getUser = async (
   req: Request,
   res: Response,
@@ -33,8 +44,8 @@ export const getUser = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    
-    const user = users.find(user => user.id === id);
+    const user = await User.findById(id).select('-password');
+
     if (!user) {
       res.status(404).json({
         success: false,
@@ -43,18 +54,21 @@ export const getUser = async (
       return;
     }
 
-    // Remove password from response
-    const { password, ...userWithoutPassword } = user;
-
     res.status(200).json({
       success: true,
-      data: userWithoutPassword,
+      message: 'User retrieved successfully',
+      data: user,
     });
   } catch (error) {
     next(error);
   }
 };
 
+/**
+ * @desc    Update user profile
+ * @route   PUT /api/V1/users/:id
+ * @access  Private
+ */
 export const updateUser = async (
   req: Request,
   res: Response,
@@ -64,7 +78,7 @@ export const updateUser = async (
     const { id } = req.params;
     const updateData: UpdateUserDto = req.body;
 
-    // Check if user is updating their own profile or is admin
+    // Check if user is updating their own profile or is an admin
     if (req.user?.id !== id && req.user?.role !== 'admin') {
       res.status(403).json({
         success: false,
@@ -73,8 +87,12 @@ export const updateUser = async (
       return;
     }
 
-    const userIndex = users.findIndex(user => user.id === id);
-    if (userIndex === -1) {
+    const updatedUser = await User.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true,
+    }).select('-password');
+
+    if (!updatedUser) {
       res.status(404).json({
         success: false,
         error: { message: 'User not found' },
@@ -82,25 +100,20 @@ export const updateUser = async (
       return;
     }
 
-    // Update user
-    users[userIndex] = {
-      ...users[userIndex],
-      ...updateData,
-      updatedAt: new Date(),
-    };
-
-    // Remove password from response
-    const { password, ...userWithoutPassword } = users[userIndex];
-
     res.status(200).json({
       success: true,
-      data: userWithoutPassword,
+      data: updatedUser,
     });
   } catch (error) {
     next(error);
   }
 };
 
+/**
+ * @desc    Delete a user
+ * @route   DELETE /api/V1/users/:id
+ * @access  Private
+ */
 export const deleteUser = async (
   req: Request,
   res: Response,
@@ -109,7 +122,7 @@ export const deleteUser = async (
   try {
     const { id } = req.params;
 
-    // Check if user is deleting their own profile or is admin
+    // Check if user is deleting their own profile or is an admin
     if (req.user?.id !== id && req.user?.role !== 'admin') {
       res.status(403).json({
         success: false,
@@ -118,8 +131,9 @@ export const deleteUser = async (
       return;
     }
 
-    const userIndex = users.findIndex(user => user.id === id);
-    if (userIndex === -1) {
+    const deletedUser = await User.findByIdAndDelete(id).select('-password');
+
+    if (!deletedUser) {
       res.status(404).json({
         success: false,
         error: { message: 'User not found' },
@@ -127,12 +141,9 @@ export const deleteUser = async (
       return;
     }
 
-    // Remove user
-    users.splice(userIndex, 1);
-
     res.status(200).json({
       success: true,
-      data: {},
+      message: 'User deleted successfully',
     });
   } catch (error) {
     next(error);

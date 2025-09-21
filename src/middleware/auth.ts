@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken } from '@/utils/jwt';
+import { JwtPayload } from 'jsonwebtoken';
+import { IUser } from '@/models/User';
 
 export const authenticate = (
   req: Request,
@@ -9,7 +11,10 @@ export const authenticate = (
   let token: string | undefined;
 
   // Check for token in headers
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
     token = req.headers.authorization.split(' ')[1];
   }
 
@@ -24,12 +29,8 @@ export const authenticate = (
 
   try {
     // Verify token
-    const decoded = verifyToken(token);
-    req.user = {
-      id: decoded.id,
-      email: decoded.email,
-      role: decoded.role,
-    };
+    const decoded = verifyToken(token) as IUser & JwtPayload;
+    req.user = decoded;
     next();
   } catch (error) {
     res.status(401).json({
@@ -52,7 +53,9 @@ export const authorize = (...roles: string[]) => {
     if (!roles.includes(req.user.role)) {
       res.status(403).json({
         success: false,
-        error: { message: 'User role is not authorized to access this resource' },
+        error: {
+          message: 'User role is not authorized to access this resource',
+        },
       });
       return;
     }

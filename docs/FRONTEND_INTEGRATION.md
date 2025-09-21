@@ -24,8 +24,8 @@ npm install -D @types/axios
 Create a `.env.local` file in your React app:
 
 ```env
-NEXT_PUBLIC_API_URL=https://nysc-talent-to-jobs-backend.onrender.com
-NEXT_PUBLIC_API_URL_DEV=http://localhost:5000
+VITE_PUBLIC_API_URL=https://nysc-talent-to-jobs-backend.onrender.com
+VITE_PUBLIC_API_URL_DEV=http://localhost:5000
 ```
 
 ## API Configuration
@@ -36,8 +36,8 @@ NEXT_PUBLIC_API_URL_DEV=http://localhost:5000
 import axios from 'axios';
 
 const API_URL = process.env.NODE_ENV === 'production'
-  ? process.env.NEXT_PUBLIC_API_URL
-  : process.env.NEXT_PUBLIC_API_URL_DEV || 'http://localhost:5000';
+  ? process.env.import.meta.env.VITE_PUBLIC_API_URL
+  : process.env.import.meta.env.VITE_PUBLIC_API_URL_DEV || 'http://localhost:5000';
 
 // Create axios instance
 export const api = axios.create({
