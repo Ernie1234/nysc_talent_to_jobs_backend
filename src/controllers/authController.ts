@@ -19,7 +19,7 @@ export const register = async (
         success: false,
         token: '',
         user: {} as any,
-        error: { message: 'User already exists with this email' }
+        error: { message: 'User already exists with this email' },
       });
       return;
     }
@@ -31,13 +31,17 @@ export const register = async (
       firstName,
       lastName,
       role: role || 'job_seeker',
-      provider: 'local'
+      provider: 'local',
     });
 
     await newUser.save();
 
     // Generate token
-    const token = generateToken(newUser._id.toString(), newUser.email, newUser.role);
+    const token = generateToken(
+      newUser._id.toString(),
+      newUser.email,
+      newUser.role
+    );
 
     res.status(201).json({
       success: true,
@@ -50,7 +54,7 @@ export const register = async (
         success: false,
         token: '',
         user: {} as any,
-        error: { message: 'User already exists with this email' }
+        error: { message: 'User already exists with this email' },
       });
       return;
     }
@@ -73,7 +77,7 @@ export const login = async (
         success: false,
         token: '',
         user: {} as any,
-        error: { message: 'Invalid credentials' }
+        error: { message: 'Invalid credentials' },
       });
       return;
     }
@@ -86,7 +90,7 @@ export const login = async (
           success: false,
           token: '',
           user: {} as any,
-          error: { message: 'Invalid credentials' }
+          error: { message: 'Invalid credentials' },
         });
         return;
       }
@@ -95,7 +99,7 @@ export const login = async (
         success: false,
         token: '',
         user: {} as any,
-        error: { message: 'Please use Google login for this account' }
+        error: { message: 'Please use Google login for this account' },
       });
       return;
     }
@@ -130,8 +134,8 @@ export const getMe = async (
       });
       return;
     }
-    
-    const user = await User.findById(req.user.id);
+
+    const user = await User.findById({ _id: req.user.id as string });
     if (!user) {
       res.status(404).json({
         success: false,
