@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { UpdateUserDto } from '@/types/user';
-import { AuthenticatedRequest } from '@/middleware/auth';
 
 // Mock user storage (replace with actual database)
 const users: any[] = [];
@@ -57,7 +56,7 @@ export const getUser = async (
 };
 
 export const updateUser = async (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -103,7 +102,7 @@ export const updateUser = async (
 };
 
 export const deleteUser = async (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {

@@ -3,15 +3,21 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
+import session from 'express-session';
 import dotenv from 'dotenv';
 
+// Load environment variables first
+dotenv.config();
+
+import connectDB from '@/config/database';
+import passport from '@/config/passport';
 import { errorHandler } from '@/middleware/errorHandler';
 import { notFound } from '@/middleware/notFound';
 import authRoutes from '@/routes/authRoutes';
 import userRoutes from '@/routes/userRoutes';
 
-// Load environment variables
-dotenv.config();
+// Connect to database
+connectDB();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -36,6 +42,21 @@ app.use(cors({
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Session configuration
+app.use(session({
+  secret: process.env.SESSION_SECRET || process.env.JWT_SECRET || 'fallback-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  },
+}));
+
+// Passport middleware
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Logging middleware
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));

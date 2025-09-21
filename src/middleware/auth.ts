@@ -1,16 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-
-export interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    role: string;
-  };
-}
+import { verifyToken } from '@/utils/jwt';
 
 export const authenticate = (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ): void => {
@@ -31,17 +23,8 @@ export const authenticate = (
   }
 
   try {
-    const secret = process.env.JWT_SECRET;
-    if (!secret) {
-      res.status(500).json({
-        success: false,
-        error: { message: 'Server configuration error' },
-      });
-      return;
-    }
-    
     // Verify token
-    const decoded = jwt.verify(token, secret) as any;
+    const decoded = verifyToken(token);
     req.user = {
       id: decoded.id,
       email: decoded.email,
@@ -57,7 +40,7 @@ export const authenticate = (
 };
 
 export const authorize = (...roles: string[]) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
       res.status(401).json({
         success: false,

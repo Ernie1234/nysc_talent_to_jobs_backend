@@ -13,7 +13,7 @@ export interface User {
 export enum UserRole {
   ADMIN = 'admin',
   EMPLOYER = 'employer',
-  TALENT = 'talent',
+  JOB_SEEKER = 'job_seeker',
 }
 
 export interface UserProfile {
@@ -71,4 +71,5 @@ export interface AuthResponse {
   success: boolean;
   token: string;
   user: Omit<User, 'password'>;
+  error?: { message: string };
 }

@@ -1,22 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import User, { IUser } from '@/models/User';
 import { CreateUserDto, LoginDto, AuthResponse } from '@/types/user';
-
-// Mock user storage (replace with actual database)
-const users: any[] = [];
-
-const generateToken = (userId: string, email: string, role: string): string => {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    throw new Error('JWT_SECRET is not defined');
-  }
-  
-  return jwt.sign(
-    { id: userId, email, role },
-    secret
-  );
-};
+import { generateToken } from '@/utils/jwt';
 
 export const register = async (
   req: Request<{}, AuthResponse, CreateUserDto>,
@@ -27,46 +12,47 @@ export const register = async (
     const { email, password, firstName, lastName, role } = req.body;
 
     // Check if user exists
-    const existingUser = users.find(user => user.email === email);
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
       res.status(400).json({
         success: false,
         token: '',
         user: {} as any,
+        error: { message: 'User already exists with this email' }
       });
       return;
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(12);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create user
-    const newUser = {
-      id: Date.now().toString(),
+    // Create user (password will be hashed automatically by the model)
+    const newUser = new User({
       email,
-      password: hashedPassword,
+      password,
       firstName,
       lastName,
-      role,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+      role: role || 'job_seeker',
+      provider: 'local'
+    });
 
-    users.push(newUser);
+    await newUser.save();
 
     // Generate token
-    const token = generateToken(newUser.id, newUser.email, newUser.role);
-
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = newUser;
+    const token = generateToken(newUser._id.toString(), newUser.email, newUser.role);
 
     res.status(201).json({
       success: true,
       token,
-      user: userWithoutPassword,
+      user: newUser.toJSON() as any,
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error.code === 11000) {
+      res.status(400).json({
+        success: false,
+        token: '',
+        user: {} as any,
+        error: { message: 'User already exists with this email' }
+      });
+      return;
+    }
     next(error);
   }
 };
@@ -79,38 +65,51 @@ export const login = async (
   try {
     const { email, password } = req.body;
 
-    // Find user
-    const user = users.find(user => user.email === email);
+    // Find user and include password for comparison
+    const user = await User.findOne({ email }).select('+password');
     if (!user) {
       res.status(401).json({
         success: false,
         token: '',
         user: {} as any,
+        error: { message: 'Invalid credentials' }
       });
       return;
     }
 
-    // Check password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      res.status(401).json({
+    // Check password (only for local users)
+    if (user.provider === 'local') {
+      const isPasswordValid = await user.comparePassword(password);
+      if (!isPasswordValid) {
+        res.status(401).json({
+          success: false,
+          token: '',
+          user: {} as any,
+          error: { message: 'Invalid credentials' }
+        });
+        return;
+      }
+    } else {
+      res.status(400).json({
         success: false,
         token: '',
         user: {} as any,
+        error: { message: 'Please use Google login for this account' }
       });
       return;
     }
 
-    // Generate token
-    const token = generateToken(user.id, user.email, user.role);
+    // Update last login
+    user.lastLoginAt = new Date();
+    await user.save();
 
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = user;
+    // Generate token
+    const token = generateToken(user._id.toString(), user.email, user.role);
 
     res.status(200).json({
       success: true,
       token,
-      user: userWithoutPassword,
+      user: user.toJSON() as any,
     });
   } catch (error) {
     next(error);
@@ -118,12 +117,20 @@ export const login = async (
 };
 
 export const getMe = async (
-  req: any,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const user = users.find(user => user.id === req.user.id);
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        error: { message: 'Not authenticated' },
+      });
+      return;
+    }
+    
+    const user = await User.findById(req.user.id);
     if (!user) {
       res.status(404).json({
         success: false,
@@ -132,12 +139,9 @@ export const getMe = async (
       return;
     }
 
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = user;
-
     res.status(200).json({
       success: true,
-      data: userWithoutPassword,
+      data: user.toJSON(),
     });
   } catch (error) {
     next(error);
