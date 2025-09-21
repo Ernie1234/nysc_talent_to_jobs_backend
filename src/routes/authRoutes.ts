@@ -55,7 +55,7 @@ router.get(
       const token = generateToken(user._id.toString(), user.email, user.role);
 
       // Redirect to frontend with token
-      const frontendURL = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5173';
       res.redirect(`${frontendURL}/auth/success?token=${token}`);
     } catch (error) {
       console.error('Google OAuth callback error:', error);
