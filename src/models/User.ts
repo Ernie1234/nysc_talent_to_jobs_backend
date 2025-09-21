@@ -97,9 +97,7 @@ const UserSchema = new Schema<IUser>(
   }
 );
 
-// Indexes
-UserSchema.index({ email: 1 });
-UserSchema.index({ googleId: 1 }, { sparse: true });
+// Indexes are defined inline with field definitions above
 
 // Hash password before saving
 UserSchema.pre('save', async function (next) {
