@@ -6,21 +6,39 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 This is the backend API for the NYSC Talents to Jobs platform, built with Node.js, TypeScript, and Express. The project uses Bun as the JavaScript runtime and package manager, with a focus on connecting NYSC corps members with job opportunities.
 
-## Development Commands
+## Quick Start
+
+### Prerequisites
+- Bun v1.2.22 or later
+- MongoDB (local or Atlas)
+- Docker (optional, for containerized development)
 
 ### Setup and Installation
 ```bash
 # Install dependencies
 bun install
+
+# Copy environment variables
+cp .env.example .env
+
+# Edit .env with your actual values
+# Required: MONGODB_URI, JWT_SECRET
 ```
 
-### Development
+### Development Commands
+
 ```bash
 # Start development server with hot reload
 bun run dev
 
-# Alternative development command (legacy from README)
-bun run index.ts
+# Type checking
+bun run type-check
+
+# Linting and formatting
+bun run lint          # Check for linting errors
+bun run lint:fix      # Fix auto-fixable linting errors
+bun run format        # Format code with Prettier
+bun run format:check  # Check if code is properly formatted
 ```
 
 ### Building and Production
@@ -30,6 +48,25 @@ bun run build
 
 # Start production server
 bun run start
+
+# Clean build directory
+bun run clean
+```
+
+### Docker Development
+```bash
+# Start all services (app + MongoDB)
+bun run docker:dev
+
+# Stop all services
+bun run docker:dev:down
+
+# Start MongoDB admin interface (optional)
+bun run db:tools
+# Access at http://localhost:8081 (admin/pass)
+
+# Production Docker build
+bun run docker:prod
 ```
 
 ## Architecture and Structure
@@ -84,5 +121,98 @@ Based on the TypeScript configuration and dependencies, the project expects:
   - Resend for email services
   - Google Generative AI services
 
-## Current State
-The project appears to be in initial setup phase with basic infrastructure configured but minimal implementation in `src/server.ts`. When developing, expect to create the full MVC structure according to the path aliases defined in `tsconfig.json`.
+## Code Quality and Linting
+
+### ESLint Configuration
+- Uses Airbnb TypeScript style guide
+- Configured with Prettier integration
+- Custom rules for Node.js backend development
+- Import resolver configured for TypeScript path aliases
+
+### Prettier Configuration
+- Single quotes, semicolons enabled
+- 100 character line width
+- 2-space indentation
+- Trailing commas (ES5 compatible)
+
+## Database Schema
+
+### User Model (`src/models/User.ts`)
+The User model includes comprehensive fields for the NYSC platform:
+
+**Core Fields:**
+- `email`, `password`, `firstName`, `lastName`
+- `role`: 'corps_member' | 'employer' | 'admin'
+
+**Onboarding System:**
+- `onboardingCompleted`: Boolean flag for completion status
+- `onboardingStep`: Number (1-5) tracking current onboarding step
+- Use these fields to guide users through registration flow
+
+**Profile Data:**
+- Corps member: `stateOfService`, `placeOfPrimaryAssignment`, `skills`, `bio`
+- Employer: `companyName`, `companySize`, `industry`, `companyDescription`
+- File uploads: `profilePicture`, `resume`
+- Social links: `linkedin`, `github`
+
+## Deployment
+
+### Render Deployment
+- Automatic deployment via GitHub Actions on push to `main`
+- Environment variables managed in Render dashboard
+- Health check endpoint: `/health`
+
+**Required Render Environment Variables:**
+- `MONGODB_URI`: MongoDB connection string
+- `JWT_SECRET`: At least 32 characters
+- `NODE_ENV`: production
+- `PORT`: Automatically set by Render
+- `CORS_ORIGIN`: Your frontend domain
+
+**GitHub Secrets Required:**
+- `RENDER_SERVICE_ID`: Your Render service ID
+- `RENDER_API_KEY`: Render API key for deployments
+
+### GitHub Actions Pipeline
+1. **Test Stage**: Type checking, linting, formatting checks, build test
+2. **Deploy Stage**: Automatic deployment to Render (main branch only)
+
+## Development Workflow
+
+### Starting Development
+1. Copy `.env.example` to `.env` and configure
+2. Start MongoDB (local or Docker: `bun run docker:dev`)
+3. Run development server: `bun run dev`
+4. Server available at: http://localhost:5000
+5. Health check: http://localhost:5000/health
+
+### Before Committing
+```bash
+bun run type-check    # Ensure no TypeScript errors
+bun run lint:fix      # Fix linting issues
+bun run format        # Format code
+```
+
+### Working with User Onboarding
+After user registration, use the onboarding fields to:
+1. Check `onboardingCompleted` to redirect incomplete users
+2. Use `onboardingStep` to show appropriate onboarding screens
+3. Increment `onboardingStep` as users complete each step
+4. Set `onboardingCompleted: true` when flow is finished
+
+## Current Implementation Status
+- ✅ Project structure and configuration
+- ✅ User model with onboarding system
+- ✅ Express server with middleware
+- ✅ Docker containerization
+- ✅ CI/CD pipeline
+- ❌ Authentication routes and middleware
+- ❌ User onboarding API endpoints
+- ❌ Job posting and matching features
+
+## Next Development Steps
+1. Implement JWT authentication middleware
+2. Create user registration and login endpoints
+3. Build onboarding API routes
+4. Add file upload functionality
+5. Develop job posting system
