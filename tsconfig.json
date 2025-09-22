@@ -34,7 +34,8 @@
       "@/routes/*": ["src/routes/*"],
       "@/services/*": ["src/services/*"],
       "@/utils/*": ["src/utils/*"],
-      "@/types/*": ["src/types/*"]
+      "@/types/*": ["src/types/*"],
+      "@/enums/*": ["src/enums/*"]
     }
   },
   "include": ["src/**/*.ts"],

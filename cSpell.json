@@ -1,0 +1,28 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "HTTPSTATUS",
+    "Anumah",
+    "cloudinary",
+    "cookieparser",
+    "dotenv",
+    "express",
+    "helmet",
+    "jsonwebtoken",
+    "mongoose",
+    "multer",
+    "nodemon",
+    "passport",
+    "resend",
+    "tsnode",
+    "uuid",
+    "zod"
+  ],
+  "ignorePaths": [
+    "node_modules",
+    "dist",
+    "package-lock.json",
+    "bun.lockb"
+  ]
+}

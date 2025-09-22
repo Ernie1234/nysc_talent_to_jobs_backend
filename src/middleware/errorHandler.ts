@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { ApiResponse } from '@/types';
-import { env } from '@/config/env';
+import envConfig from '@/config/env-config';
+
+const envValues = envConfig();
 
 export class AppError extends Error {
   public statusCode: number;
@@ -74,7 +76,7 @@ export const errorHandler = (
   error: Error,
   req: Request,
   res: Response,
-  _next: NextFunction,
+  _next: NextFunction
 ): void => {
   let response: ApiResponse;
 
@@ -94,7 +96,7 @@ export const errorHandler = (
     response = {
       success: false,
       message: error.message,
-      ...(env.NODE_ENV === 'development' && { error: error.stack }),
+      ...(envValues.NODE_ENV === 'development' && { error: error.stack }),
     };
     res.status(error.statusCode).json(response);
   } else if (
@@ -122,8 +124,8 @@ export const errorHandler = (
   } else {
     response = {
       success: false,
-      message: env.NODE_ENV === 'development' ? error.message : 'Internal server error',
-      ...(env.NODE_ENV === 'development' && { error: error.stack }),
+      message: envValues.NODE_ENV === 'development' ? error.message : 'Internal server error',
+      ...(envValues.NODE_ENV === 'development' && { error: error.stack }),
     };
     res.status(500).json(response);
   }

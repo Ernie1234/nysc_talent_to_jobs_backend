@@ -1,9 +1,10 @@
 import mongoose from 'mongoose';
-import { env } from './env';
+import envConfig from '@/config/env-config';
+const env = envConfig();
 
 const connectDB = async (): Promise<void> => {
   try {
-    const conn = await mongoose.connect(env.MONGODB_URI, {
+    const conn = await mongoose.connect(env.MONGODB_URI as string, {
       bufferCommands: false,
     });
 

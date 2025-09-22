@@ -32,10 +32,10 @@ export default [
     rules: {
       // Base ESLint rules
       ...js.configs.recommended.rules,
-      
+
       // TypeScript rules
       ...tsPlugin.configs.recommended.rules,
-      
+
       // Airbnb-inspired rules for Node.js
       'no-console': 'warn',
       'no-debugger': 'error',
@@ -45,21 +45,21 @@ export default [
       'prefer-template': 'error',
       'object-shorthand': 'error',
       'arrow-spacing': 'error',
-      'comma-dangle': ['error', 'always-multiline'],
-      'quotes': ['error', 'single'],
-      'semi': ['error', 'always'],
-      'indent': ['error', 2],
+      'comma-dangle': ['warn', 'always-multiline'],
+      quotes: ['error', 'single'],
+      semi: ['error', 'always'],
+      indent: ['error', 2],
       'max-len': ['error', { code: 100 }],
       'eol-last': ['error', 'always'],
       'no-trailing-spaces': 'error',
-      
+
       // TypeScript specific rules
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/explicit-function-return-type': 'warn',
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/prefer-nullish-coalescing': 'error',
       '@typescript-eslint/prefer-optional-chain': 'error',
-      
+
       // Import rules
       'import/extensions': ['error', 'ignorePackages', { ts: 'never' }],
       'import/prefer-default-export': 'off',
@@ -67,18 +67,11 @@ export default [
       'import/order': [
         'error',
         {
-          groups: [
-            'builtin',
-            'external',
-            'internal',
-            'parent',
-            'sibling',
-            'index'
-          ],
-          'newlines-between': 'never'
-        }
+          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+          'newlines-between': 'never',
+        },
       ],
-      
+
       // Node.js specific
       'class-methods-use-this': 'off',
       'consistent-return': 'off',

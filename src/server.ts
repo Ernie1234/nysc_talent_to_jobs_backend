@@ -1,14 +1,17 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import { env } from '@/config/env';
+import 'dotenv/config';
 import connectDB from '@/config/database';
 import { errorHandler } from '@/middleware/errorHandler';
 import { ApiResponse } from '@/types';
+import envConfig from '@/config/env-config';
+import { HTTPSTATUS } from './config/http-config';
 
 const app = express();
-
+const env = envConfig();
+const BASE_PATH = env.BASE_PATH ?? '/api/v1';
 // Connect to database
 connectDB();
 
@@ -18,16 +21,16 @@ app.use(helmet());
 // CORS configuration
 app.use(
   cors({
-    origin: env.CORS_ORIGIN.split(',').map(origin => origin.trim()),
+    origin: env.FRONTEND_ORIGIN,
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  }),
+    // methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    // allowedHeaders: ['Content-Type', 'Authorization'],
+  })
 );
 
 // Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Request logging middleware (development only)
@@ -41,6 +44,18 @@ if (env.NODE_ENV === 'development') {
     next();
   });
 }
+
+app.get('/', (req: Request, res: Response) => {
+  const response: ApiResponse = {
+    success: true,
+    message: 'Welcome to the NYSC Talents to Jobs API',
+    data: {
+      version: '1.0.0',
+      documentation: `${BASE_PATH}/docs`,
+    },
+  };
+  res.status(HTTPSTATUS.OK).json(response);
+});
 
 // Health check endpoint
 app.get('/health', (_req, res) => {
@@ -57,7 +72,7 @@ app.get('/health', (_req, res) => {
 });
 
 // API routes will be added here
-app.use('/api/v1', (req, res) => {
+app.use(BASE_PATH, (req, res) => {
   const response: ApiResponse = {
     success: false,
     message: 'API endpoint not implemented yet',
@@ -79,7 +94,7 @@ app.use('*', (req, res) => {
 // Global error handling middleware
 app.use(errorHandler);
 
-const PORT = env.PORT || 5000;
+const PORT = env.PORT ?? 5000;
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running in ${env.NODE_ENV} mode on port ${PORT}`);
