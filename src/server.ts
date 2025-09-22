@@ -2,16 +2,19 @@ import express, { Request, Response } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import morgan from 'morgan';
 import 'dotenv/config';
 import connectDB from '@/config/database';
 import { errorHandler } from '@/middleware/errorHandler';
 import { ApiResponse } from '@/types';
 import envConfig from '@/config/env-config';
 import { HTTPSTATUS } from './config/http-config';
+import Logger from './utils/logger';
 
 const app = express();
 const env = envConfig();
 const BASE_PATH = env.BASE_PATH ?? '/api/v1';
+
 // Connect to database
 connectDB();
 
@@ -23,8 +26,6 @@ app.use(
   cors({
     origin: env.FRONTEND_ORIGIN,
     credentials: true,
-    // methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    // allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
 
@@ -33,10 +34,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// Logging middleware
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+
 // Request logging middleware (development only)
 if (env.NODE_ENV === 'development') {
   app.use((req, _res, next) => {
-    console.log(`${req.method} ${req.path}`, {
+    Logger.info(`${req.method} ${req.path}`, {
       body: Object.keys(req.body ?? {}).length > 0 ? req.body : undefined,
       query: Object.keys(req.query ?? {}).length > 0 ? req.query : undefined,
       timestamp: new Date().toISOString(),
@@ -45,6 +49,7 @@ if (env.NODE_ENV === 'development') {
   });
 }
 
+// Root route
 app.get('/', (req: Request, res: Response) => {
   const response: ApiResponse = {
     success: true,
@@ -71,18 +76,48 @@ app.get('/health', (_req, res) => {
   res.json(response);
 });
 
-// API routes will be added here
-app.use(BASE_PATH, (req, res) => {
+// API base route
+app.get(BASE_PATH, (req: Request, res: Response) => {
+  const response: ApiResponse = {
+    success: true,
+    message: 'NYSC Talents to Jobs API is running',
+    data: {
+      version: '1.0.0',
+      basePath: BASE_PATH,
+      endpoints: {
+        health: '/health',
+        docs: `${BASE_PATH}/docs`,
+      },
+    },
+  };
+  res.status(HTTPSTATUS.OK).json(response);
+});
+
+// API route placeholder - this will be replaced with actual routes later
+// Use a specific middleware for unmatched API routes
+app.use(BASE_PATH, (req, res, next) => {
+  // If this is exactly the base path, skip (it's handled above)
+  if (req.path === '/' || req.path === '') {
+    return next();
+  }
+
+  // Handle all other API sub-routes as 404
   const response: ApiResponse = {
     success: false,
-    message: 'API endpoint not implemented yet',
-    error: `Route ${req.method} ${req.path} not found`,
+    message: 'API endpoint not implemented',
+    error: `Route ${req.method} ${req.originalUrl} not found`,
   };
   res.status(404).json(response);
 });
 
-// Handle 404 for all other routes
-app.use('*', (req, res) => {
+// Handle 404 for all other routes - FIXED: Remove the problematic wildcard
+app.use((req, res, next) => {
+  // Skip if the request was already handled by API routes
+  if (req.path.startsWith(BASE_PATH)) {
+    return next();
+  }
+
+  // Only handle non-API routes that haven't been matched
   const response: ApiResponse = {
     success: false,
     message: 'Route not found',
@@ -97,9 +132,7 @@ app.use(errorHandler);
 const PORT = env.PORT ?? 5000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running in ${env.NODE_ENV} mode on port ${PORT}`);
-  console.log(`📍 Health check: http://localhost:${PORT}/health`);
-  if (env.NODE_ENV === 'development') {
-    console.log(`📖 API docs: http://localhost:${PORT}/api/v1`);
-  }
+  Logger.info(`🚀 Server running in ${env.NODE_ENV} mode on port ${PORT}`);
+  Logger.info(`📍 Health check: http://localhost:${PORT}/health`);
+  Logger.info(`🌐 Base API path: http://localhost:${PORT}${BASE_PATH}`);
 });

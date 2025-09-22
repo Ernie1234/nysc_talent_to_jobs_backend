@@ -1,132 +1,63 @@
-import { Request, Response, NextFunction } from 'express';
-import { ZodError } from 'zod';
-import { ApiResponse } from '@/types';
-import envConfig from '@/config/env-config';
+import { NextFunction, Response } from 'express';
+import { z, ZodError } from 'zod';
+import { ErrorRequestHandler } from 'express';
+import { MulterError } from 'multer';
+import { HTTPSTATUS } from '@/config/http-config';
+import { AppError } from '../utils/app-error';
+import { ErrorCodeEnum } from '../enums/error-code.enum';
 
-const envValues = envConfig();
-
-export class AppError extends Error {
-  public statusCode: number;
-
-  public isOperational: boolean;
-
-  constructor(message: string, statusCode: number = 500) {
-    super(message);
-    this.statusCode = statusCode;
-    this.isOperational = true;
-
-    Error.captureStackTrace(this, this.constructor);
-  }
-}
-
-const handleZodError = (error: ZodError): ApiResponse => {
-  const errors: Record<string, string> = {};
-
-  error.errors.forEach(err => {
-    const path = err.path.join('.');
-    errors[path] = err.message;
-  });
-
-  return {
-    success: false,
+const formatZodError = (res: Response, error: z.ZodError) => {
+  const errors = error?.issues?.map(err => ({
+    field: err.path.join('.'),
+    message: err.message,
+  }));
+  return res.status(HTTPSTATUS.BAD_REQUEST).json({
     message: 'Validation failed',
     errors,
-  };
+    errorCode: ErrorCodeEnum.VALIDATION_ERROR,
+  });
 };
 
-const handleMongooseError = (error: any): ApiResponse => {
-  if (error.code === 11000) {
-    const field = Object.keys(error.keyValue ?? {})[0];
-    return {
-      success: false,
-      message: `${field} already exists`,
-      error: `Duplicate field: ${field}`,
-    };
-  }
-
-  if (error.name === 'ValidationError') {
-    const errors: Record<string, string> = {};
-    Object.keys(error.errors).forEach(key => {
-      errors[key] = error.errors[key].message;
-    });
-
-    return {
-      success: false,
-      message: 'Validation failed',
-      errors,
-    };
-  }
-
-  if (error.name === 'CastError') {
-    return {
-      success: false,
-      message: 'Invalid ID format',
-      error: 'Resource not found',
-    };
-  }
+const handleMulterError = (error: MulterError) => {
+  const messages = {
+    LIMIT_UNEXPECTED_FILE: 'Invalid file field name. Please use "file" as the field name.',
+    LIMIT_FILE_SIZE: 'File size exceeds the limit',
+    LIMIT_FILE_COUNT: 'Too many files uploaded',
+    default: 'File upload error',
+  };
 
   return {
-    success: false,
-    message: 'Database error',
+    status: HTTPSTATUS.BAD_REQUEST,
+    message: messages[error.code as keyof typeof messages] ?? messages.default,
     error: error.message,
   };
 };
 
-export const errorHandler = (
-  error: Error,
-  req: Request,
-  res: Response,
-  _next: NextFunction
-): void => {
-  let response: ApiResponse;
-
-  // Log error
-  console.error('Error:', {
-    message: error.message,
-    stack: error.stack,
-    url: req.url,
-    method: req.method,
-    timestamp: new Date().toISOString(),
-  });
+export const errorHandler: ErrorRequestHandler = (error, req, res, _next: NextFunction): any => {
+  console.log('Error occurred on PATH:', req.path, 'Error:', error);
 
   if (error instanceof ZodError) {
-    response = handleZodError(error);
-    res.status(400).json(response);
-  } else if (error instanceof AppError) {
-    response = {
-      success: false,
-      message: error.message,
-      ...(envValues.NODE_ENV === 'development' && { error: error.stack }),
-    };
-    res.status(error.statusCode).json(response);
-  } else if (
-    error.name === 'MongoError' ||
-    error.name === 'ValidationError' ||
-    error.name === 'CastError' ||
-    (error as any).code === 11000
-  ) {
-    response = handleMongooseError(error);
-    res.status(400).json(response);
-  } else if (error.name === 'JsonWebTokenError') {
-    response = {
-      success: false,
-      message: 'Invalid token',
-      error: 'Authentication failed',
-    };
-    res.status(401).json(response);
-  } else if (error.name === 'TokenExpiredError') {
-    response = {
-      success: false,
-      message: 'Token expired',
-      error: 'Authentication failed',
-    };
-    res.status(401).json(response);
-  } else {
-    response = {
-      success: false,
-      message: envValues.NODE_ENV === 'development' ? error.message : 'Internal server error',
-      ...(envValues.NODE_ENV === 'development' && { error: error.stack }),
-    };
-    res.status(500).json(response);
+    return formatZodError(res, error);
   }
+
+  if (error instanceof MulterError) {
+    const { status, message, error: err } = handleMulterError(error);
+    return res.status(status).json({
+      message,
+      error: err,
+      errorCode: ErrorCodeEnum.FILE_UPLOAD_ERROR,
+    });
+  }
+
+  if (error instanceof AppError) {
+    return res.status(error.statusCode).json({
+      message: error.message,
+      errorCode: error.errorCode,
+    });
+  }
+
+  return res.status(HTTPSTATUS.INTERNAL_SERVER_ERROR).json({
+    message: 'Internal Server Error',
+    error: error?.message ?? 'Unknow error occurred',
+  });
 };
