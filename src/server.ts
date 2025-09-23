@@ -93,6 +93,9 @@ app.get(BASE_PATH, (req: Request, res: Response) => {
   res.status(HTTPSTATUS.OK).json(response);
 });
 
+app.get('/error-test', () => {
+  throw new Error('This is a test error for the error handling middleware.');
+});
 // API route placeholder - this will be replaced with actual routes later
 // Use a specific middleware for unmatched API routes
 app.use(BASE_PATH, (req, res, next) => {
