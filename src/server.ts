@@ -4,6 +4,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import 'dotenv/config';
+import passport from 'passport';
 import connectDB from '@/config/database';
 import { errorHandler } from '@/middleware/errorHandler';
 import { ApiResponse } from '@/types';
@@ -31,7 +32,7 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-
+app.use(passport.initialize());
 // Logging middleware
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 

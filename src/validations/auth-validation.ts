@@ -86,7 +86,7 @@ export const userCreateSchema = userBaseSchema.extend({
 });
 
 export const userUpdateSchema = userBaseSchema.partial().extend({
-  password: passwordSchema.optional(),
+  // password: passwordSchema.optional(),
   profile: profileSchema.partial().optional(),
   employerProfile: employerProfileSchema.partial().optional(),
   onboardingCompleted: z.boolean().optional(),
