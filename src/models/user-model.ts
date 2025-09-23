@@ -1,5 +1,5 @@
 import { Schema, model, Document, Types } from 'mongoose';
-import bcrypt from 'bcrypt';
+import { compareValue, hashValue } from '@/utils/bcrypt-config';
 
 export interface IUser extends Document {
   _id: Types.ObjectId;
@@ -10,6 +10,7 @@ export interface IUser extends Document {
   role: 'corps_member' | 'employer' | 'admin';
   onboardingCompleted: boolean;
   onboardingStep: number;
+  profilePicture?: string;
   profile?: {
     phoneNumber?: string;
     stateOfService?: string;
@@ -36,7 +37,8 @@ export interface IUser extends Document {
   lastLogin?: Date;
   createdAt: Date;
   updatedAt: Date;
-  comparePassword(candidatePassword: string): Promise<boolean>;
+  comparePassword: (candidatePassword: string) => Promise<boolean>;
+  omitPassword: () => Omit<IUser, 'password'>;
 }
 
 const userSchema = new Schema<IUser>(
@@ -166,7 +168,7 @@ const userSchema = new Schema<IUser>(
     toObject: {
       virtuals: true,
     },
-  },
+  }
 );
 
 // Index for faster queries
@@ -182,18 +184,15 @@ userSchema.virtual('fullName').get(function (this: IUser) {
 
 // Pre-save middleware to hash password
 userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-
-  const salt = await bcrypt.genSalt(12);
-  this.password = await bcrypt.hash(this.password, salt);
+  if (this.isModified('password')) {
+    if (this.password) this.password = await hashValue(this.password);
+  }
   next();
 });
 
 // Instance method to compare password
-userSchema.methods.comparePassword = async function (
-  candidatePassword: string,
-): Promise<boolean> {
-  return bcrypt.compare(candidatePassword, this.password);
+userSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
+  return compareValue(candidatePassword, this.password);
 };
 
-export const User = model<IUser>('User', userSchema);
+export const UserModel = model<IUser>('User', userSchema);

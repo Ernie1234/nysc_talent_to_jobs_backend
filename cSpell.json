@@ -17,7 +17,7 @@
     "resend",
     "tsnode",
     "uuid",
-    "zod"
+    "zod","maxlength","minlength"
   ],
   "ignorePaths": [
     "node_modules",

@@ -10,13 +10,11 @@ import { ApiResponse } from '@/types';
 import envConfig from '@/config/env-config';
 import { HTTPSTATUS } from './config/http-config';
 import Logger from './utils/logger';
+import apiRouter from './routes';
 
 const app = express();
 const env = envConfig();
 const BASE_PATH = env.BASE_PATH ?? '/api/v1';
-
-// Connect to database
-connectDB();
 
 // Security middleware
 app.use(helmet());
@@ -63,7 +61,7 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 // Health check endpoint
-app.get('/health', (_req, res) => {
+app.get(`${BASE_PATH}/health`, (_req, res) => {
   const response: ApiResponse = {
     success: true,
     message: 'Server is healthy',
@@ -77,25 +75,11 @@ app.get('/health', (_req, res) => {
 });
 
 // API base route
-app.get(BASE_PATH, (req: Request, res: Response) => {
-  const response: ApiResponse = {
-    success: true,
-    message: 'NYSC Talents to Jobs API is running',
-    data: {
-      version: '1.0.0',
-      basePath: BASE_PATH,
-      endpoints: {
-        health: '/health',
-        docs: `${BASE_PATH}/docs`,
-      },
-    },
-  };
-  res.status(HTTPSTATUS.OK).json(response);
-});
+app.get(BASE_PATH, apiRouter);
 
-app.get('/error-test', () => {
-  throw new Error('This is a test error for the error handling middleware.');
-});
+// app.get('/error-test', () => {
+//   throw new BadRequestException('This is a test error for the error handling middleware.');
+// });
 // API route placeholder - this will be replaced with actual routes later
 // Use a specific middleware for unmatched API routes
 app.use(BASE_PATH, (req, res, next) => {
@@ -134,7 +118,10 @@ app.use(errorHandler);
 
 const PORT = env.PORT ?? 5000;
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
+  // Connect to database
+  await connectDB();
+
   Logger.info(`🚀 Server running in ${env.NODE_ENV} mode on port ${PORT}`);
   Logger.info(`📍 Health check: http://localhost:${PORT}/health`);
   Logger.info(`🌐 Base API path: http://localhost:${PORT}${BASE_PATH}`);
