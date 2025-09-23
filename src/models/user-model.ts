@@ -4,13 +4,14 @@ import { compareValue, hashValue } from '@/utils/bcrypt-config';
 export interface IUser extends Document {
   _id: Types.ObjectId;
   email: string;
-  password: string;
+  password?: string; // Make password optional
+  googleId?: string; // Add Google ID
+  githubId?: string; // Add GitHub ID
   firstName: string;
   lastName: string;
   role: 'corps_member' | 'employer' | 'admin';
   onboardingCompleted: boolean;
   onboardingStep: number;
-  profilePicture?: string;
   profile?: {
     phoneNumber?: string;
     stateOfService?: string;
@@ -172,7 +173,6 @@ const userSchema = new Schema<IUser>(
 );
 
 // Index for faster queries
-userSchema.index({ email: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ onboardingCompleted: 1 });
 userSchema.index({ createdAt: -1 });
@@ -184,15 +184,25 @@ userSchema.virtual('fullName').get(function (this: IUser) {
 
 // Pre-save middleware to hash password
 userSchema.pre('save', async function (next) {
-  if (this.isModified('password')) {
-    if (this.password) this.password = await hashValue(this.password);
+  if (this.isModified('password') && this.password) {
+    this.password = await hashValue(this.password);
   }
   next();
 });
 
 // Instance method to compare password
-userSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
-  return compareValue(candidatePassword, this.password);
+userSchema.methods.comparePassword = async function (value: string): Promise<boolean> {
+  if (!this.password) {
+    return false;
+  }
+  return compareValue(value, this.password);
+};
+
+// Add the method back to the schema
+userSchema.methods.omitPassword = function (): Omit<IUser, 'password'> {
+  const userObject = this.toObject();
+  delete userObject.password;
+  return userObject;
 };
 
 export const UserModel = model<IUser>('User', userSchema);

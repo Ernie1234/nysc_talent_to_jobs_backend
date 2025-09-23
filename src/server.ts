@@ -75,7 +75,7 @@ app.get(`${BASE_PATH}/health`, (_req, res) => {
 });
 
 // API base route
-app.get(BASE_PATH, apiRouter);
+app.use(BASE_PATH, apiRouter);
 
 // app.get('/error-test', () => {
 //   throw new BadRequestException('This is a test error for the error handling middleware.');
@@ -118,11 +118,20 @@ app.use(errorHandler);
 
 const PORT = env.PORT ?? 5000;
 
-app.listen(PORT, async () => {
-  // Connect to database
-  await connectDB();
+const startServer = async () => {
+  try {
+    // Await the database connection first
+    await connectDB(); // Then, and only then, start the server
 
-  Logger.info(`🚀 Server running in ${env.NODE_ENV} mode on port ${PORT}`);
-  Logger.info(`📍 Health check: http://localhost:${PORT}/health`);
-  Logger.info(`🌐 Base API path: http://localhost:${PORT}${BASE_PATH}`);
-});
+    app.listen(PORT, () => {
+      Logger.info(`🚀 Server running in ${env.NODE_ENV} mode on port ${PORT}`);
+      Logger.info(`📍 Health check: http://localhost:${PORT}/health`);
+      Logger.info(`🌐 Base API path: http://localhost:${PORT}${BASE_PATH}`);
+    });
+  } catch (error) {
+    Logger.error('Failed to start server:', error);
+    process.exit(1); // Exit with a failure code
+  }
+};
+
+startServer();
