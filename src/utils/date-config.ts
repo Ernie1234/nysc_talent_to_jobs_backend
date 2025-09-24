@@ -9,8 +9,8 @@ import {
   subMonths,
   subYears,
 } from 'date-fns';
-import Logger from './logger';
 import { DateRangeEnum, DateRangePreset } from '@/enums/date-range.enum';
+import Logger from './logger';
 
 export const getDateRange = (preset?: DateRangePreset, customFrom?: Date, customTo?: Date) => {
   if (customFrom && customTo) {
