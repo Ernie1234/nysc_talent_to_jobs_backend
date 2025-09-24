@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import multer from 'multer';
 import { Request, Response, NextFunction } from 'express';
 
@@ -16,5 +18,5 @@ export const handleUploadError = (error: any, _req: Request, res: Response, next
       });
     }
   }
-  next(error);
+  return next(error);
 };
