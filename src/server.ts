@@ -23,7 +23,7 @@ app.use(helmet());
 // CORS configuration
 app.use(
   cors({
-    origin: env.FRONTEND_ORIGIN,
+    origin: [env.FRONTEND_ORIGIN, env.FRONTEND_PROD_ORIGIN],
     credentials: true,
   })
 );

@@ -10,6 +10,7 @@ interface EnvConfig {
   JWT_REFRESH_SECRET: string;
   JWT_REFRESH_EXPIRES_IN: string;
   FRONTEND_ORIGIN: string;
+  FRONTEND_PROD_ORIGIN: string;
   GEMINI_API_KEY: string;
   CRON_SECRET: string;
   CLOUDINARY_CLOUD_NAME: string;
@@ -30,6 +31,7 @@ const envConfig = (): EnvConfig => ({
   JWT_REFRESH_SECRET: getEnv('JWT_REFRESH_SECRET', 'secret_jwt_refresh_key'),
   JWT_REFRESH_EXPIRES_IN: getEnv('JWT_REFRESH_EXPIRES_IN', '7d'),
   FRONTEND_ORIGIN: getEnv('FRONTEND_ORIGIN', 'http://localhost:5173'),
+  FRONTEND_PROD_ORIGIN: getEnv('FRONTEND_PROD_ORIGIN', 'http://localhost:5173'),
   GEMINI_API_KEY: getEnv('GEMINI_API_KEY', ''),
   CRON_SECRET: getEnv('CRON_SECRET', '0 0 * * *'),
   CLOUDINARY_CLOUD_NAME: getEnv('CLOUDINARY_CLOUD_NAME', ''),
