@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc && tsc-alias",
+    "build": "npm run clean && tsc && npm run fix-aliases",
+    "fix-aliases": "tsc-alias -p tsconfig.json",
+    "build:verbose": "npm run clean && tsc && tsc-alias -p tsconfig.json --verbose",
     "start": "node dist/server.js",
     "type-check": "tsc --noEmit",
     "lint": "eslint src/**/*.ts",
@@ -19,7 +21,10 @@
     "docker:build": "docker build -t nysc-talents-jobs-backend .",
     "db:tools": "docker-compose --profile tools up mongo-express",
     "clean": "rimraf dist",
-    "prebuild": "npm run clean"
+    "prebuild": "npm run clean",
+    "check-dist": "node -e \"const fs = require('fs'); const items = fs.readdirSync('./dist', { withFileTypes: true }); items.forEach(item => { console.log(item.isDirectory() ? item.name + '/' : item.name); });\"",
+    "check-dist-structure": "find dist -type f -name '*.js' | head -20",
+    "check-dist-windows": "if exist dist (dir dist /B) else (echo dist folder does not exist)"
   },
   "private": true,
   "keywords": [
