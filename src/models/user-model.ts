@@ -16,13 +16,14 @@ export interface IUser extends Document {
     phoneNumber?: string;
     stateOfService?: string;
     placeOfPrimaryAssignment?: string;
-    skills?: string[];
+    skills?: Types.ObjectId[];
     bio?: string;
     profilePicture?: string;
     resume?: string;
     linkedin?: string;
     github?: string;
   };
+  personalInfo?: Types.ObjectId;
   employerProfile?: {
     companyName?: string;
     companySize?: string;
@@ -100,9 +101,8 @@ const userSchema = new Schema<IUser>(
       },
       skills: [
         {
-          type: String,
-          trim: true,
-          maxlength: [50, 'Skill name cannot exceed 50 characters'],
+          type: Schema.Types.ObjectId,
+          ref: 'Skill',
         },
       ],
       bio: {
@@ -119,6 +119,10 @@ const userSchema = new Schema<IUser>(
         type: String,
         match: [/^https?:\/\/.*github\.com\/.*/, 'Please enter a valid GitHub URL'],
       },
+    },
+    personalInfo: {
+      type: Schema.Types.ObjectId,
+      ref: 'PersonalInfo',
     },
     employerProfile: {
       companyName: {

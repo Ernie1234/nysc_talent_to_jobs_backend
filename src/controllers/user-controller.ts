@@ -19,7 +19,7 @@ export const getCurrentUserController = asyncHandler(async (req: Request, res: R
   return res.status(HTTPSTATUS.OK).json({
     success: true,
     message: 'Current user fetched successfully ✅',
-    data: { user: user.omitPassword() },
+    data: { user },
   });
 });
 

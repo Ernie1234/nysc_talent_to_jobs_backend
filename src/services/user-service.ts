@@ -9,9 +9,9 @@ import { UserUpdateSchemaType } from '@/validations/auth-validation';
  * It's the controller's responsibility to handle the case where the user is not found.
  */
 export const findByIdUserService = async (userId: string): Promise<IUser | null> => {
-  const user = await UserModel.findById(userId).select(
-    '-password -passwordResetToken -emailVerificationToken'
-  );
+  const user = await UserModel.findById(userId)
+    .select('-password -passwordResetToken -emailVerificationToken')
+    .exec();
   return user;
 };
 
