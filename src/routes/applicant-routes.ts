@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { passportAuthenticateJwt } from '@/config/passport-config';
 import {
   getApplicationDetailsController,
+  getEmployerApplicationAnalysisController,
   getEmployerApplicationsController,
   getUserApplicationsController,
   updateApplicationController,
@@ -17,6 +18,7 @@ router.use(passportAuthenticateJwt);
 // Corps member routes
 router.get('/my-applications', getUserApplicationsController);
 router.get('/employer', getEmployerApplicationsController);
+router.get('/analysis', getEmployerApplicationAnalysisController);
 router.patch('/:applicationId/withdraw', withdrawApplicationController);
 router.get('/:applicationId', getApplicationDetailsController);
 router.patch('/:applicationId', updateApplicationController);

@@ -17,6 +17,7 @@ import {
   withdrawApplicationService,
   getApplicationDetailsService,
   getEmployerApplicationsService,
+  getEmployerApplicationAnalysisService,
 } from '@/services/applicant-service';
 
 export const applyToJobController = asyncHandler(async (req: Request, res: Response) => {
@@ -147,6 +148,31 @@ export const getEmployerApplicationsController = asyncHandler(
       success: true,
       message: 'Your job applications fetched successfully',
       data: result,
+    });
+  }
+);
+
+// controllers/job-controller.ts - Add this new controller
+export const getEmployerApplicationAnalysisController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const user = req.user;
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.role !== 'employer') {
+      return res.status(HTTPSTATUS.FORBIDDEN).json({
+        success: false,
+        message: 'Only employers can access application analysis data',
+      });
+    }
+
+    const analysis = await getEmployerApplicationAnalysisService(user.id);
+
+    return res.status(HTTPSTATUS.OK).json({
+      success: true,
+      message: 'Employer application analysis fetched successfully',
+      data: analysis,
     });
   }
 );

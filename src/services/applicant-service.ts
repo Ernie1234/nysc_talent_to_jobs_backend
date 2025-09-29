@@ -12,6 +12,7 @@ import {
 } from '@/validations/applicant-validation';
 import { DocumentModel } from '@/models/document-model';
 import { ResumeUploadModel } from '@/models/resume-upload-model';
+import { calculateAverageProcessingTimes, generateApplicationTrends } from '@/utils/helper';
 
 export const applyToJobService = async (
   jobId: string,
@@ -89,7 +90,6 @@ export const applyToJobService = async (
 
   return { applicant: populatedApplicant!, job };
 };
-
 export const getJobApplicationsService = async (
   jobId: string,
   employerId: string,
@@ -126,7 +126,6 @@ export const getJobApplicationsService = async (
     totalPages: Math.ceil(total / limit),
   };
 };
-
 export const getEmployerApplicationsService = async (
   employerId: string,
   query: ApplicationQueryInput
@@ -187,7 +186,6 @@ export const updateApplicationService = async (
 
   return updatedApplicant;
 };
-
 export const getUserApplicationsService = async (
   userId: string,
   query: ApplicationQueryInput
@@ -217,7 +215,6 @@ export const getUserApplicationsService = async (
     totalPages: Math.ceil(total / limit),
   };
 };
-
 export const getApplicationDetailsService = async (
   applicationId: string,
   userId: string,
@@ -270,13 +267,9 @@ export const withdrawApplicationService = async (
   });
 };
 
-export const getJobAnalysisService = async (
-  jobId: string,
-  employerId: string
-): Promise<{
-  jobDetails: any;
-  applicantStats: {
-    total: number;
+export interface EmployerApplicationAnalysis {
+  totalApplications: number;
+  applicationStats: {
     pending: number;
     under_review: number;
     shortlisted: number;
@@ -285,37 +278,86 @@ export const getJobAnalysisService = async (
     accepted: number;
     withdrawn: number;
   };
-  viewCount: number;
-}> => {
-  // Verify job exists and belongs to employer
-  const job = await JobModel.findOne({
-    _id: new Types.ObjectId(jobId),
-    employerId: new Types.ObjectId(employerId),
-  })
-    .select('title status viewCount applicationCount createdAt publishedAt')
-    .lean();
+  applicationTrends: {
+    daily: Array<{
+      date: string;
+      count: number;
+    }>;
+    weekly: Array<{
+      week: string;
+      count: number;
+    }>;
+    monthly: Array<{
+      month: string;
+      count: number;
+    }>;
+  };
+  recentApplications: Array<{
+    applicationId: string;
+    jobId: string;
+    jobTitle: string;
+    applicantName: string;
+    applicantEmail: string;
+    status: string;
+    appliedAt: Date;
+    reviewedAt?: Date;
+    coverLetter?: string;
+  }>;
+  statusDistribution: Array<{
+    status: string;
+    count: number;
+    percentage: number;
+  }>;
+  averageApplicationTime: {
+    appliedToReviewed: number; // in hours
+    appliedToAccepted: number; // in hours
+  };
+}
 
-  if (!job) {
-    throw new NotFoundException('Job not found');
+export const getEmployerApplicationAnalysisService = async (
+  employerId: string
+): Promise<EmployerApplicationAnalysis> => {
+  if (!Types.ObjectId.isValid(employerId)) {
+    throw new NotFoundException('Employer not found');
   }
 
-  // Get detailed applicant statistics for this job
-  const applicantStats = await ApplicantModel.aggregate([
-    {
-      $match: {
-        jobId: new Types.ObjectId(jobId),
-      },
-    },
-    {
-      $group: {
-        _id: '$status',
-        count: { $sum: 1 },
-      },
-    },
-  ]);
+  // Get all applications for this employer
+  const applications = await ApplicantModel.find({
+    employerId: new Types.ObjectId(employerId),
+  })
+    .populate('userId', 'firstName lastName email')
+    .populate('jobId', 'title')
+    .sort({ appliedAt: -1 })
+    .lean();
 
-  // Convert to structured format
-  const statsMap = {
+  if (!applications.length) {
+    return {
+      totalApplications: 0,
+      applicationStats: {
+        pending: 0,
+        under_review: 0,
+        shortlisted: 0,
+        interview: 0,
+        rejected: 0,
+        accepted: 0,
+        withdrawn: 0,
+      },
+      applicationTrends: {
+        daily: [],
+        weekly: [],
+        monthly: [],
+      },
+      recentApplications: [],
+      statusDistribution: [],
+      averageApplicationTime: {
+        appliedToReviewed: 0,
+        appliedToAccepted: 0,
+      },
+    };
+  }
+
+  // Calculate application statistics with type safety
+  const applicationStats = {
     pending: 0,
     under_review: 0,
     shortlisted: 0,
@@ -325,18 +367,63 @@ export const getJobAnalysisService = async (
     withdrawn: 0,
   };
 
-  applicantStats.forEach(stat => {
-    statsMap[stat._id as keyof typeof statsMap] = stat.count;
+  applications.forEach(app => {
+    const status = app.status as keyof typeof applicationStats;
+    if (Object.prototype.hasOwnProperty.call(applicationStats, status)) {
+      applicationStats[status]++;
+    }
   });
 
-  const totalApplicants = Object.values(statsMap).reduce((sum, count) => sum + count, 0);
+  const totalApplications = applications.length;
+  const statusDistribution = Object.entries(applicationStats).map(([status, count]) => ({
+    status,
+    count,
+    percentage: totalApplications > 0 ? Math.round((count / totalApplications) * 100) : 0,
+  }));
+
+  // Generate application trends
+  const applicationTrends = generateApplicationTrends(applications);
+
+  // Get recent applications (last 10) with type safety
+  // Alternative approach with type assertions
+  const recentApplications = applications.slice(0, 10).map(app => {
+    const populatedJob = app.jobId as any;
+    const populatedUser = app.userId as any;
+
+    return {
+      applicationId: app._id.toString(),
+      jobId: populatedJob?._id?.toString() ?? '',
+      jobTitle: populatedJob?.title ?? 'Unknown Job',
+      applicantName:
+        `${populatedUser?.firstName ?? ''} ${populatedUser?.lastName ?? ''}`.trim() ||
+        'Unknown Applicant',
+      applicantEmail: populatedUser?.email ?? 'No email',
+      status: app.status,
+      appliedAt: app.appliedAt,
+      reviewedAt: app.reviewedAt as Date | undefined, // Type assertion
+      coverLetter: app.coverLetter as string | undefined, // Type assertion
+    };
+  }) as Array<{
+    applicationId: string;
+    jobId: string;
+    jobTitle: string;
+    applicantName: string;
+    applicantEmail: string;
+    status: string;
+    appliedAt: Date;
+    reviewedAt?: Date;
+    coverLetter?: string;
+  }>;
+
+  // Calculate average application processing times
+  const averageApplicationTime = calculateAverageProcessingTimes(applications);
 
   return {
-    jobDetails: job,
-    applicantStats: {
-      total: totalApplicants,
-      ...statsMap,
-    },
-    viewCount: job.viewCount || 0,
+    totalApplications,
+    applicationStats,
+    applicationTrends,
+    recentApplications,
+    statusDistribution,
+    averageApplicationTime,
   };
 };
