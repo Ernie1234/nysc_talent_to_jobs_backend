@@ -1,8 +1,10 @@
+/* eslint-disable indent */
 import { Types } from 'mongoose';
 import { JobModel, IJob, JobStatus } from '@/models/job-model';
 import { CreateJobInput, UpdateJobInput, JobQueryInput } from '@/validations/job-validation';
 import { NotFoundException } from '@/utils/app-error';
 import { UserModel } from '@/models/user-model';
+import { ApplicantModel } from '@/models/applicant-model';
 
 export interface JobWithEmployer extends IJob {
   employerDetails?: {
@@ -196,5 +198,149 @@ export const getPublicJobsService = async (
     total,
     page,
     totalPages: Math.ceil(total / limit),
+  };
+};
+
+export interface EmployerStats {
+  totalJobs: number;
+  publishedJobs: number;
+  draftedJobs: number;
+  closedJobs: number;
+  archivedJobs: number;
+  totalApplicants: number;
+  totalViews: number;
+  shortlistedCount: number;
+  acceptedCount: number;
+  jobs: Array<{
+    jobId: string;
+    title: string;
+    status: string;
+    applicationCount: number;
+    viewCount: number;
+    shortlistedCount: number;
+    acceptedCount: number;
+    createdAt: Date;
+    publishedAt: Date | undefined;
+  }>;
+}
+
+export const getEmployerAnalysisService = async (employerId: string): Promise<EmployerStats> => {
+  const jobs = await JobModel.find({
+    employerId: new Types.ObjectId(employerId),
+  })
+    .select('_id title status applicationCount viewCount createdAt publishedAt')
+    .sort({ createdAt: -1 })
+    .lean();
+
+  if (!jobs.length) {
+    return {
+      totalJobs: 0,
+      publishedJobs: 0,
+      draftedJobs: 0,
+      closedJobs: 0,
+      archivedJobs: 0,
+      totalApplicants: 0,
+      totalViews: 0,
+      shortlistedCount: 0,
+      acceptedCount: 0,
+      jobs: [],
+    };
+  }
+
+  const jobIds = jobs.map(job => job._id);
+  const applicantStats = await ApplicantModel.aggregate([
+    {
+      $match: {
+        jobId: { $in: jobIds },
+      },
+    },
+    {
+      $group: {
+        _id: '$jobId',
+        totalApplicants: { $sum: 1 },
+        shortlistedCount: {
+          $sum: { $cond: [{ $eq: ['$status', 'shortlisted'] }, 1, 0] },
+        },
+        acceptedCount: {
+          $sum: { $cond: [{ $eq: ['$status', 'accepted'] }, 1, 0] },
+        },
+      },
+    },
+  ]);
+
+  const applicantStatsMap = new Map();
+  applicantStats.forEach(stat => {
+    applicantStatsMap.set(stat._id.toString(), {
+      totalApplicants: stat.totalApplicants,
+      shortlistedCount: stat.shortlistedCount,
+      acceptedCount: stat.acceptedCount,
+    });
+  });
+
+  let totalJobs = 0;
+  let publishedJobs = 0;
+  let draftedJobs = 0;
+  let closedJobs = 0;
+  let archivedJobs = 0;
+  let totalApplicants = 0;
+  let totalViews = 0;
+  let totalShortlisted = 0;
+  let totalAccepted = 0;
+
+  const jobDetails = jobs.map(job => {
+    const jobIdStr = job._id.toString();
+    const stats = applicantStatsMap.get(jobIdStr) ?? {
+      totalApplicants: 0,
+      shortlistedCount: 0,
+      acceptedCount: 0,
+    };
+
+    // Update overall counts
+    totalJobs++;
+    totalApplicants += stats.totalApplicants;
+    totalViews += job.viewCount || 0;
+    totalShortlisted += stats.shortlistedCount;
+    totalAccepted += stats.acceptedCount;
+
+    // Update status counts
+    switch (job.status) {
+      case 'published':
+        publishedJobs++;
+        break;
+      case 'draft':
+        draftedJobs++;
+        break;
+      case 'closed':
+        closedJobs++;
+        break;
+      case 'archived':
+        archivedJobs++;
+        break;
+    }
+
+    return {
+      jobId: jobIdStr,
+      title: job.title,
+      status: job.status,
+      applicationCount: stats.totalApplicants,
+      viewCount: job.viewCount || 0,
+      shortlistedCount: stats.shortlistedCount,
+      acceptedCount: stats.acceptedCount,
+      createdAt: job.createdAt,
+      publishedAt: job.publishedAt,
+    };
+  });
+
+  return {
+    totalJobs,
+    publishedJobs,
+    draftedJobs,
+    closedJobs,
+    archivedJobs,
+    totalApplicants,
+    totalViews,
+    shortlistedCount: totalShortlisted,
+    acceptedCount: totalAccepted,
+    jobs: jobDetails,
   };
 };

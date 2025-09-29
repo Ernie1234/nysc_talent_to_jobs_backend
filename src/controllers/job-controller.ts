@@ -8,6 +8,7 @@ import {
   getEmployerJobsService,
   deleteJobService,
   changeJobStatusService,
+  getEmployerAnalysisService,
 } from '@/services/job-service';
 import { HTTPSTATUS } from '@/config/http-config';
 import { NotFoundException } from '@/utils/app-error';
@@ -141,5 +142,27 @@ export const closeJobController = asyncHandler(async (req: Request, res: Respons
     success: true,
     message: 'Job closed successfully',
     data: job,
+  });
+});
+
+export const getEmployerAnalysisController = asyncHandler(async (req: Request, res: Response) => {
+  const user = req.user;
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
+
+  if (user.role !== 'employer') {
+    return res.status(HTTPSTATUS.FORBIDDEN).json({
+      success: false,
+      message: 'Only employers can access analysis data',
+    });
+  }
+
+  const analysis = await getEmployerAnalysisService(user.id);
+
+  return res.status(HTTPSTATUS.OK).json({
+    success: true,
+    message: 'Employer analysis fetched successfully',
+    data: analysis,
   });
 });

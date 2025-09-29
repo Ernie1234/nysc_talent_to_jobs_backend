@@ -269,3 +269,74 @@ export const withdrawApplicationService = async (
     $inc: { applicationCount: -1 },
   });
 };
+
+export const getJobAnalysisService = async (
+  jobId: string,
+  employerId: string
+): Promise<{
+  jobDetails: any;
+  applicantStats: {
+    total: number;
+    pending: number;
+    under_review: number;
+    shortlisted: number;
+    interview: number;
+    rejected: number;
+    accepted: number;
+    withdrawn: number;
+  };
+  viewCount: number;
+}> => {
+  // Verify job exists and belongs to employer
+  const job = await JobModel.findOne({
+    _id: new Types.ObjectId(jobId),
+    employerId: new Types.ObjectId(employerId),
+  })
+    .select('title status viewCount applicationCount createdAt publishedAt')
+    .lean();
+
+  if (!job) {
+    throw new NotFoundException('Job not found');
+  }
+
+  // Get detailed applicant statistics for this job
+  const applicantStats = await ApplicantModel.aggregate([
+    {
+      $match: {
+        jobId: new Types.ObjectId(jobId),
+      },
+    },
+    {
+      $group: {
+        _id: '$status',
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  // Convert to structured format
+  const statsMap = {
+    pending: 0,
+    under_review: 0,
+    shortlisted: 0,
+    interview: 0,
+    rejected: 0,
+    accepted: 0,
+    withdrawn: 0,
+  };
+
+  applicantStats.forEach(stat => {
+    statsMap[stat._id as keyof typeof statsMap] = stat.count;
+  });
+
+  const totalApplicants = Object.values(statsMap).reduce((sum, count) => sum + count, 0);
+
+  return {
+    jobDetails: job,
+    applicantStats: {
+      total: totalApplicants,
+      ...statsMap,
+    },
+    viewCount: job.viewCount || 0,
+  };
+};

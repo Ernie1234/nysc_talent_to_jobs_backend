@@ -8,6 +8,7 @@ import {
   deleteJobController,
   publishJobController,
   closeJobController,
+  getEmployerAnalysisController,
 } from '@/controllers/job-controller';
 import {
   applyToJobController,
@@ -22,6 +23,7 @@ router.use(passportAuthenticateJwt);
 // Job CRUD routes
 router.post('/', createJobController);
 router.get('/', getEmployerJobsController);
+router.get('/analysis', getEmployerAnalysisController);
 router.get('/:jobId', getJobController);
 router.put('/:jobId', updateJobController);
 router.delete('/:jobId', deleteJobController);
