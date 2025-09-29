@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { Types } from 'mongoose';
 import { asyncHandler } from '@/middleware/asyncHandler.middlerware';
 import { HTTPSTATUS } from '@/config/http-config';
-import { BadRequestException, NotFoundException } from '@/utils/app-error';
+import { BadRequestException, NotFoundException, UnauthorizedException } from '@/utils/app-error';
 import {
   applyToJobSchema,
   updateApplicationSchema,
@@ -11,13 +11,13 @@ import {
 } from '@/validations/applicant-validation';
 import {
   applyToJobService,
-  getJobApplicationsService,
   updateApplicationService,
   getUserApplicationsService,
   withdrawApplicationService,
   getApplicationDetailsService,
   getEmployerApplicationsService,
   getEmployerApplicationAnalysisService,
+  getEmployerJobApplicationsService,
 } from '@/services/applicant-service';
 
 export const applyToJobController = asyncHandler(async (req: Request, res: Response) => {
@@ -38,23 +38,25 @@ export const applyToJobController = asyncHandler(async (req: Request, res: Respo
   });
 });
 
-export const getJobApplicationsController = asyncHandler(async (req: Request, res: Response) => {
-  const { jobId } = req.params;
-  const query = applicationQuerySchema.parse(req.query);
-  const user = req.user;
+export const getEmployerJobApplicationsController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { jobId } = req.params;
+    const query = applicationQuerySchema.parse(req.query);
+    const user = req.user;
 
-  if (!user) {
-    throw new NotFoundException('User not found');
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const result = await getEmployerJobApplicationsService(jobId!, user.id, query);
+
+    return res.status(HTTPSTATUS.OK).json({
+      success: true,
+      message: 'Applications fetched successfully',
+      data: result,
+    });
   }
-
-  const result = await getJobApplicationsService(jobId!, user.id, query);
-
-  return res.status(HTTPSTATUS.OK).json({
-    success: true,
-    message: 'Applications fetched successfully',
-    data: result,
-  });
-});
+);
 
 export const updateApplicationController = asyncHandler(async (req: Request, res: Response) => {
   const { applicationId } = req.params;
@@ -63,6 +65,10 @@ export const updateApplicationController = asyncHandler(async (req: Request, res
 
   if (!user) {
     throw new NotFoundException('User not found');
+  }
+
+  if (user.role !== 'employer') {
+    throw new UnauthorizedException('You do not have permission to update this resource. 🚫');
   }
 
   const application = await updateApplicationService(applicationId!, user.id, updateData);
@@ -129,12 +135,12 @@ export const getEmployerApplicationsController = asyncHandler(
     const query = applicationQuerySchema.parse(req.query);
     const user = req.user;
 
-    console.log('User object:', user); // Debug log
-    console.log('User ID:', user?.id); // Debug log
-    console.log('User ID type:', typeof user?.id); // Debug log
-
     if (!user) {
       throw new NotFoundException('User not found');
+    }
+
+    if (user.role !== 'employer') {
+      throw new UnauthorizedException('You do not have permission view employers Applications🚫');
     }
 
     // Validate that user.id is a valid ObjectId
@@ -161,10 +167,7 @@ export const getEmployerApplicationAnalysisController = asyncHandler(
     }
 
     if (user.role !== 'employer') {
-      return res.status(HTTPSTATUS.FORBIDDEN).json({
-        success: false,
-        message: 'Only employers can access application analysis data',
-      });
+      throw new UnauthorizedException('Only employers can access application analysis data 🚫');
     }
 
     const analysis = await getEmployerApplicationAnalysisService(user.id);

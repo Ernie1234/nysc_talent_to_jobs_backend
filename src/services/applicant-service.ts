@@ -90,7 +90,7 @@ export const applyToJobService = async (
 
   return { applicant: populatedApplicant!, job };
 };
-export const getJobApplicationsService = async (
+export const getEmployerJobApplicationsService = async (
   jobId: string,
   employerId: string,
   query: ApplicationQueryInput

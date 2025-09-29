@@ -162,45 +162,6 @@ export const changeJobStatusService = async (
 
   return job;
 };
-
-export const getPublicJobsService = async (
-  query: Omit<JobQueryInput, 'status'> & { state?: string }
-): Promise<{ jobs: IJob[]; total: number; page: number; totalPages: number }> => {
-  const { page, limit, search, jobType, experienceLevel, workLocation, state } = query;
-
-  const filter: any = { status: 'published' };
-
-  if (jobType) filter.jobType = jobType;
-  if (experienceLevel) filter.experienceLevel = experienceLevel;
-  if (workLocation) filter.workLocation = workLocation;
-
-  if (state) {
-    filter.$or = [{ 'hiringLocation.type': 'nation-wide' }, { 'hiringLocation.state': state }];
-  }
-
-  if (search) {
-    filter.$or = [
-      { title: { $regex: search, $options: 'i' } },
-      { aboutJob: { $regex: search, $options: 'i' } },
-      { skills: { $in: [new RegExp(search, 'i')] } },
-    ];
-  }
-
-  const total = await JobModel.countDocuments(filter);
-  const jobs = await JobModel.find(filter)
-    .populate('employerId', 'firstName lastName employerProfile')
-    .sort({ publishedAt: -1 })
-    .skip((page - 1) * limit)
-    .limit(limit);
-
-  return {
-    jobs,
-    total,
-    page,
-    totalPages: Math.ceil(total / limit),
-  };
-};
-
 export interface EmployerStats {
   totalJobs: number;
   publishedJobs: number;
@@ -343,4 +304,87 @@ export const getEmployerAnalysisService = async (employerId: string): Promise<Em
     acceptedCount: totalAccepted,
     jobs: jobDetails,
   };
+};
+export const getPublicJobsService = async (
+  query: JobQueryInput
+): Promise<{
+  jobs: IJob[];
+  total: number;
+  page: number;
+  totalPages: number;
+}> => {
+  const { page, limit, search, jobType, experienceLevel, workLocation } = query;
+
+  // Corps members can only see published jobs
+  const filter: any = { status: 'published' };
+
+  // Additional filters
+  if (jobType) filter.jobType = jobType;
+  if (experienceLevel) filter.experienceLevel = experienceLevel;
+  if (workLocation) filter.workLocation = workLocation;
+
+  if (search) {
+    filter.$or = [
+      { title: { $regex: search, $options: 'i' } },
+      { aboutJob: { $regex: search, $options: 'i' } },
+      { requirements: { $regex: search, $options: 'i' } },
+      { skills: { $in: [new RegExp(search, 'i')] } },
+    ];
+  }
+
+  const total = await JobModel.countDocuments(filter);
+  const jobs = await JobModel.find(filter)
+    .populate('employerId', 'firstName lastName email employerProfile companyName')
+    .select('-applicants') // Don't include applicants data for corps members
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(limit);
+
+  return {
+    jobs,
+    total,
+    page,
+    totalPages: Math.ceil(total / limit),
+  };
+};
+export const getPublicJobDetailsService = async (jobId: string): Promise<IJob> => {
+  // Validate job exists and is published
+  const job = await JobModel.findOne({
+    _id: new Types.ObjectId(jobId),
+    status: 'published',
+  })
+    .populate('employerId', 'firstName lastName email employerProfile companyName')
+    .select('-applicants') // Don't include applicants data
+    .lean();
+
+  if (!job) {
+    throw new NotFoundException('Job not found or not published ⛔');
+  }
+
+  return job;
+};
+export const updateJobViewCountService = async (jobId: string): Promise<IJob> => {
+  // Use findOneAndUpdate for atomic increment
+  const job = await JobModel.findOneAndUpdate(
+    {
+      _id: new Types.ObjectId(jobId),
+      status: 'published',
+    },
+    {
+      $inc: { viewCount: 1 },
+    },
+    {
+      new: true,
+      runValidators: true,
+    }
+  )
+    .populate('employerId', 'firstName lastName email employerProfile companyName')
+    .select('-applicants') // Don't include applicants data
+    .lean();
+
+  if (!job) {
+    throw new NotFoundException('Job not found or not published ⛔');
+  }
+
+  return job as IJob;
 };

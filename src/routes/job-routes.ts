@@ -9,10 +9,13 @@ import {
   publishJobController,
   closeJobController,
   getEmployerAnalysisController,
+  getPublicJobsController,
+  getPublicJobDetailsController,
+  updateJobViewCountController,
 } from '@/controllers/job-controller';
 import {
   applyToJobController,
-  getJobApplicationsController,
+  getEmployerJobApplicationsController,
 } from '@/controllers/applicant-controller';
 
 const router = Router();
@@ -23,6 +26,11 @@ router.use(passportAuthenticateJwt);
 // Job CRUD routes
 router.post('/', createJobController);
 router.get('/', getEmployerJobsController);
+// Corps Member routes
+router.get('/users', getPublicJobsController);
+router.get('/:jobId/users', getPublicJobDetailsController);
+router.patch('/:jobId/users/view-count', updateJobViewCountController);
+
 router.get('/analysis', getEmployerAnalysisController);
 router.get('/:jobId', getJobController);
 router.put('/:jobId', updateJobController);
@@ -34,6 +42,6 @@ router.patch('/:jobId/close', closeJobController);
 
 // Job Applications
 router.post('/:jobId/apply', applyToJobController);
-router.get('/:jobId/applications', getJobApplicationsController);
+router.get('/:jobId/applications', getEmployerJobApplicationsController);
 
 export default router;

@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { Types } from 'mongoose';
 import { asyncHandler } from '@/middleware/asyncHandler.middlerware';
 import { createJobSchema, updateJobSchema, jobQuerySchema } from '@/validations/job-validation';
 import {
@@ -9,9 +10,12 @@ import {
   deleteJobService,
   changeJobStatusService,
   getEmployerAnalysisService,
+  getPublicJobDetailsService,
+  getPublicJobsService,
+  updateJobViewCountService,
 } from '@/services/job-service';
 import { HTTPSTATUS } from '@/config/http-config';
-import { NotFoundException } from '@/utils/app-error';
+import { BadRequestException, NotFoundException } from '@/utils/app-error';
 
 export const createJobController = asyncHandler(async (req: Request, res: Response) => {
   const jobData = createJobSchema.parse(req.body);
@@ -164,5 +168,56 @@ export const getEmployerAnalysisController = asyncHandler(async (req: Request, r
     success: true,
     message: 'Employer analysis fetched successfully',
     data: analysis,
+  });
+});
+
+export const getPublicJobsController = asyncHandler(async (req: Request, res: Response) => {
+  const query = jobQuerySchema.parse(req.query);
+
+  // For public access, ignore status parameter (always show published jobs)
+  const publicQuery = {
+    ...query,
+    status: undefined, // Remove status from query for public access
+  };
+
+  const result = await getPublicJobsService(publicQuery);
+
+  return res.status(HTTPSTATUS.OK).json({
+    success: true,
+    message: 'Jobs fetched successfully',
+    data: result,
+  });
+});
+
+export const getPublicJobDetailsController = asyncHandler(async (req: Request, res: Response) => {
+  const { jobId } = req.params;
+
+  // Validate jobId format
+  if (!Types.ObjectId.isValid(jobId!)) {
+    throw new BadRequestException('Invalid job ID format');
+  }
+
+  const job = await getPublicJobDetailsService(jobId!);
+
+  return res.status(HTTPSTATUS.OK).json({
+    success: true,
+    message: 'Job details fetched successfully',
+    data: job,
+  });
+});
+export const updateJobViewCountController = asyncHandler(async (req: Request, res: Response) => {
+  const { jobId } = req.params;
+
+  // Validate jobId format
+  if (!Types.ObjectId.isValid(jobId!)) {
+    throw new BadRequestException('Invalid job ID format');
+  }
+
+  const job = await updateJobViewCountService(jobId!);
+
+  return res.status(HTTPSTATUS.OK).json({
+    success: true,
+    message: 'Job view count updated successfully',
+    data: job,
   });
 });

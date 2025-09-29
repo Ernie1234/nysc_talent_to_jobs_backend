@@ -123,6 +123,14 @@ export const jobQuerySchema = z.object({
   experienceLevel: z.enum(experienceLevelEnum).optional(),
   workLocation: z.enum(workLocationEnum).optional(),
 });
+export const publicJobQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(10),
+  search: z.string().optional(),
+  jobType: z.enum(jobTypeEnum).optional(),
+  experienceLevel: z.enum(experienceLevelEnum).optional(),
+  workLocation: z.enum(workLocationEnum).optional(),
+});
 
 export type CreateJobInput = z.infer<typeof createJobSchema>;
 export type UpdateJobInput = z.infer<typeof updateJobSchema>;
