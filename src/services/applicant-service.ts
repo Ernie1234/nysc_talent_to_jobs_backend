@@ -33,9 +33,10 @@ export const applyToJobService = async (
   const existingApplication = await ApplicantModel.findOne({
     jobId: new Types.ObjectId(jobId),
     userId: new Types.ObjectId(userId),
+    status: { $ne: 'withdrawn' },
   });
 
-  if (existingApplication) {
+  if (existingApplication && existingApplication.status !== 'withdrawn') {
     throw new BadRequestException('You have already applied to this job');
   }
 
@@ -67,23 +68,53 @@ export const applyToJobService = async (
   }
 
   // Create application
-  const applicant = await ApplicantModel.create({
+  let applicant;
+  const withdrawnApplication = await ApplicantModel.findOne({
     jobId: new Types.ObjectId(jobId),
     userId: new Types.ObjectId(userId),
-    employerId: job.employerId._id,
-    documentId: data.documentId ? new Types.ObjectId(data.documentId) : undefined,
-    resumeUploadId: data.resumeUploadId ? new Types.ObjectId(data.resumeUploadId) : undefined,
-    coverLetter: data.coverLetter,
-    ...data,
+    status: 'withdrawn',
   });
+  if (withdrawnApplication) {
+    // Update the withdrawn application
+    applicant = await ApplicantModel.findByIdAndUpdate(
+      withdrawnApplication._id,
+      {
+        documentId: data.documentId ? new Types.ObjectId(data.documentId) : undefined,
+        resumeUploadId: data.resumeUploadId ? new Types.ObjectId(data.resumeUploadId) : undefined,
+        coverLetter: data.coverLetter,
+        status: 'pending', // Reset status to pending
+        appliedAt: new Date(), // Update application timestamp
+        ...data,
+      },
+      { new: true }
+    ); // Only increment application count if this is a new application (not re-applying)
+    if (!job.applicants.includes(withdrawnApplication._id)) {
+      await JobModel.findByIdAndUpdate(jobId, {
+        $push: { applicants: applicant?._id },
+        $inc: { applicationCount: 1 },
+      });
+    }
+  } else {
+    // Create new application
+    applicant = await ApplicantModel.create({
+      jobId: new Types.ObjectId(jobId),
+      userId: new Types.ObjectId(userId),
+      employerId: job.employerId._id,
+      documentId: data.documentId ? new Types.ObjectId(data.documentId) : undefined,
+      resumeUploadId: data.resumeUploadId ? new Types.ObjectId(data.resumeUploadId) : undefined,
+      coverLetter: data.coverLetter,
+      status: 'pending',
+      ...data,
+    });
 
-  // Add applicant to job's applicants array
-  await JobModel.findByIdAndUpdate(jobId, {
-    $push: { applicants: applicant._id },
-    $inc: { applicationCount: 1 },
-  });
+    // Add applicant to job's applicants array
+    await JobModel.findByIdAndUpdate(jobId, {
+      $push: { applicants: applicant._id },
+      $inc: { applicationCount: 1 },
+    });
+  }
 
-  const populatedApplicant = await ApplicantModel.findById(applicant._id)
+  const populatedApplicant = await ApplicantModel.findById(applicant?._id)
     .populate('user', 'firstName lastName email profile')
     .populate('resumeDocument')
     .populate('uploadedResume');
