@@ -1,28 +1,56 @@
 import { Schema, model, Document, Types } from 'mongoose';
 import { compareValue, hashValue } from '@/utils/bcrypt-config';
 
+// Skill level enum
+export enum SkillLevel {
+  BEGINNER = 'beginner',
+  INTERMEDIATE = 'intermediate',
+  ADVANCED = 'advanced',
+  EXPERT = 'expert',
+}
+
+// Skill interface
+export interface ISkill {
+  _id: Types.ObjectId;
+  name: string;
+  level: SkillLevel;
+  yearsOfExperience?: number;
+}
+
+// Enhanced profile interface
+export interface IUserProfile {
+  phoneNumber?: string;
+  stateOfService?: string;
+  placeOfPrimaryAssignment?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    postalCode?: string;
+  };
+  skills?: ISkill[];
+  bio?: string;
+  profilePicture?: string;
+  resume?: string;
+  linkedin?: string;
+  github?: string;
+  dateOfBirth?: Date;
+  gender?: string;
+}
+
 export interface IUser extends Document {
   _id: Types.ObjectId;
   email: string;
-  password?: string; // Make password optional
-  googleId?: string; // Add Google ID
-  githubId?: string; // Add GitHub ID
+  password?: string;
+  googleId?: string;
+  githubId?: string;
   firstName: string;
   lastName: string;
   role: 'corps_member' | 'employer' | 'admin';
   onboardingCompleted: boolean;
   onboardingStep: number;
-  profile?: {
-    phoneNumber?: string;
-    stateOfService?: string;
-    placeOfPrimaryAssignment?: string;
-    skills?: Types.ObjectId[];
-    bio?: string;
-    profilePicture?: string;
-    resume?: string;
-    linkedin?: string;
-    github?: string;
-  };
+  profile?: IUserProfile;
   personalInfo?: Types.ObjectId;
   employerProfile?: {
     companyName?: string;
@@ -42,6 +70,26 @@ export interface IUser extends Document {
   comparePassword: (candidatePassword: string) => Promise<boolean>;
   omitPassword: () => Omit<IUser, 'password'>;
 }
+
+const skillSchema = new Schema<ISkill>({
+  name: {
+    type: String,
+    required: [true, 'Skill name is required'],
+    trim: true,
+    maxlength: [50, 'Skill name cannot exceed 50 characters'],
+  },
+  level: {
+    type: String,
+    enum: Object.values(SkillLevel),
+    required: [true, 'Skill level is required'],
+    default: SkillLevel.BEGINNER,
+  },
+  yearsOfExperience: {
+    type: Number,
+    min: 0,
+    max: 50,
+  },
+});
 
 const userSchema = new Schema<IUser>(
   {
@@ -84,7 +132,7 @@ const userSchema = new Schema<IUser>(
       type: Number,
       default: 1,
       min: 1,
-      max: 5, // Adjust based on your onboarding flow
+      max: 5,
     },
     profile: {
       phoneNumber: {
@@ -99,12 +147,14 @@ const userSchema = new Schema<IUser>(
         type: String,
         maxlength: [200, 'Place of primary assignment cannot exceed 200 characters'],
       },
-      skills: [
-        {
-          type: Schema.Types.ObjectId,
-          ref: 'Skill',
-        },
-      ],
+      address: {
+        street: { type: String, maxlength: [200, 'Street cannot exceed 200 characters'] },
+        city: { type: String, maxlength: [100, 'City cannot exceed 100 characters'] },
+        state: { type: String, maxlength: [100, 'State cannot exceed 100 characters'] },
+        country: { type: String, maxlength: [100, 'Country cannot exceed 100 characters'] },
+        postalCode: { type: String, maxlength: [20, 'Postal code cannot exceed 20 characters'] },
+      },
+      skills: [skillSchema],
       bio: {
         type: String,
         maxlength: [1000, 'Bio cannot exceed 1000 characters'],
@@ -118,6 +168,11 @@ const userSchema = new Schema<IUser>(
       github: {
         type: String,
         match: [/^https?:\/\/.*github\.com\/.*/, 'Please enter a valid GitHub URL'],
+      },
+      dateOfBirth: Date,
+      gender: {
+        type: String,
+        enum: ['male', 'female', 'other', 'prefer-not-to-say'],
       },
     },
     personalInfo: {

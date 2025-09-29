@@ -113,7 +113,7 @@ const skillsSchema = new Schema<ISkill>(
 
 const documentSchema = new Schema<IDocument>(
   {
-    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     documentId: { type: String, unique: true, required: true },
     title: { type: String, required: true, maxlength: 255 },
     summary: { type: String },

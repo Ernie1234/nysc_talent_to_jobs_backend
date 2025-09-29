@@ -26,7 +26,6 @@ const resumeUploadSchema = new Schema<IResumeUpload>(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
     originalName: {
       type: String,
