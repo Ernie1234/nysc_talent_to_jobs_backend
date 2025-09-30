@@ -1,8 +1,10 @@
 // document.zod.ts
 import { z } from 'zod';
 
+const objectIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid ObjectId');
+
 const personalInfoSchema = z.object({
-  _id: z.string().optional(),
+  _id: objectIdSchema.optional(),
   firstName: z.string().max(255).optional(),
   lastName: z.string().max(255).optional(),
   jobTitle: z.string().max(255).optional(),
@@ -12,7 +14,7 @@ const personalInfoSchema = z.object({
 });
 
 const educationSchema = z.object({
-  _id: z.string().optional(), // ✅ Add _id
+  _id: objectIdSchema.optional(),
   universityName: z.string().max(255).optional(),
   degree: z.string().max(255).optional(),
   major: z.string().max(255).optional(),
@@ -22,7 +24,7 @@ const educationSchema = z.object({
 });
 
 const experienceSchema = z.object({
-  _id: z.string().optional(), // ✅ Add _id
+  _id: objectIdSchema.optional(),
   title: z.string().max(255).optional(),
   companyName: z.string().max(255).optional(),
   city: z.string().max(255).optional(),
@@ -34,7 +36,7 @@ const experienceSchema = z.object({
 });
 
 const skillsSchema = z.object({
-  _id: z.string().optional(), // ✅ Add _id (if not already there)
+  _id: objectIdSchema.optional(),
   name: z.string().max(255).optional(),
   rating: z.number().int().min(0).optional(),
 });

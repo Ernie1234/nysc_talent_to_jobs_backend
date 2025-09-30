@@ -1,3 +1,4 @@
+/* eslint-disable indent */
 // middleware/resume-upload-middleware.ts
 import { Request, Response, NextFunction } from 'express';
 import multer from 'multer';
@@ -7,28 +8,46 @@ export const handleResumeUploadError = (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): void => {
+  // If there's no error, proceed to next middleware
+  if (!err) {
+    next();
+    return;
+  }
+
+  // Handle Multer specific errors
   if (err instanceof multer.MulterError) {
-    if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({
-        success: false,
-        message: 'File too large. Maximum size is 5MB',
-      });
-    }
-    if (err.code === 'LIMIT_FILE_COUNT') {
-      return res.status(400).json({
-        success: false,
-        message: 'Too many files. Only one file allowed',
-      });
+    switch (err.code) {
+      case 'LIMIT_FILE_SIZE':
+        res.status(400).json({
+          success: false,
+          message: 'File too large. Maximum size is 5MB',
+        });
+        return;
+      case 'LIMIT_FILE_COUNT':
+        res.status(400).json({
+          success: false,
+          message: 'Too many files. Only one file allowed',
+        });
+        return;
+      case 'LIMIT_UNEXPECTED_FILE':
+        res.status(400).json({
+          success: false,
+          message: 'Unexpected field name for file upload',
+        });
+        return;
+      default:
+        res.status(400).json({
+          success: false,
+          message: `File upload error: ${err.message}`,
+        });
+        return;
     }
   }
 
-  if (err) {
-    return res.status(400).json({
-      success: false,
-      message: err.message ?? 'File upload error',
-    });
-  }
-
-  next();
+  // Handle other errors
+  res.status(400).json({
+    success: false,
+    message: err.message ?? 'File upload error',
+  });
 };

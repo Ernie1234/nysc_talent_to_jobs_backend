@@ -47,7 +47,7 @@ export interface IUser extends Document {
   githubId?: string;
   firstName: string;
   lastName: string;
-  role: 'corps_member' | 'employer' | 'admin';
+  role: 'corps_member' | 'employer' | 'nitda';
   onboardingCompleted: boolean;
   onboardingStep: number;
   profile?: IUserProfile;
@@ -100,6 +100,17 @@ const userSchema = new Schema<IUser>(
       lowercase: true,
       trim: true,
       match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email'],
+      validate: {
+        validator(email: string) {
+          // Special validation for NITDA emails
+          if (email.toLowerCase().endsWith('@nitda.gov.ng')) {
+            return true;
+          }
+          // Standard email validation for other emails
+          return /^\S+@\S+\.\S+$/.test(email);
+        },
+        message: 'Please enter a valid email address',
+      },
     },
     password: {
       type: String,
@@ -121,7 +132,7 @@ const userSchema = new Schema<IUser>(
     },
     role: {
       type: String,
-      enum: ['corps_member', 'employer', 'admin'],
+      enum: ['corps_member', 'employer', 'nitda'],
       default: 'corps_member',
     },
     onboardingCompleted: {

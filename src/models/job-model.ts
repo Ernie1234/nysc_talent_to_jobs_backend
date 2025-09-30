@@ -1,4 +1,5 @@
 import { Schema, model, Document, Types } from 'mongoose';
+import { UserModel } from './user-model';
 
 // Enums for job-related fields
 export const jobTypeEnum = [
@@ -64,6 +65,7 @@ export interface IJob extends Document {
   applicationCount: number;
   viewCount: number;
   applicants: Types.ObjectId[];
+  isNitda: boolean;
   publishedAt?: Date;
   closedAt?: Date;
   createdAt: Date;
@@ -190,6 +192,10 @@ const jobSchema = new Schema<IJob>(
         default: [],
       },
     ],
+    isNitda: {
+      type: Boolean,
+      default: false,
+    },
     publishedAt: {
       type: Date,
     },
@@ -247,6 +253,22 @@ jobSchema.pre('save', function (next) {
     this.applicationCount = this.applicants.length;
   }
 
+  next();
+});
+
+jobSchema.pre('save', async function (next) {
+  // Only set isNitda if it's a new document or employerId is modified
+  if (this.isNew || this.isModified('employerId')) {
+    try {
+      // Use the imported UserModel directly for proper typing
+      const user = await UserModel.findById(this.employerId).select('role');
+      if (user && user.role === 'nitda') {
+        this.isNitda = true;
+      }
+    } catch (error) {
+      return next(error as Error);
+    }
+  }
   next();
 });
 

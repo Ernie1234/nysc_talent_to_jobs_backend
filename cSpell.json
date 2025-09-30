@@ -2,22 +2,25 @@
   "version": "0.2",
   "language": "en",
   "words": [
-    "HTTPSTATUS",
     "Anumah",
     "cloudinary",
     "cookieparser",
     "dotenv",
     "express",
     "helmet",
+    "HTTPSTATUS",
     "jsonwebtoken",
+    "maxlength",
+    "minlength",
     "mongoose",
     "multer",
+    "nitda",
     "nodemon",
     "passport",
     "resend",
     "tsnode",
     "uuid",
-    "zod","maxlength","minlength"
+    "zod"
   ],
   "ignorePaths": [
     "node_modules",

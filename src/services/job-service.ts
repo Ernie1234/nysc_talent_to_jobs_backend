@@ -21,9 +21,12 @@ export interface JobWithEmployer extends IJob {
 }
 
 export const createJobService = async (employerId: string, data: CreateJobInput): Promise<IJob> => {
+  const employer = await UserModel.findById(employerId).select('role');
+
   const jobData = {
     ...data,
     employerId: new Types.ObjectId(employerId),
+    isNitda: employer?.role === 'nitda',
   };
 
   const job = await JobModel.create(jobData);

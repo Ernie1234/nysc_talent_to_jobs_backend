@@ -70,7 +70,7 @@ export const employerProfileSchema = z.object({
 });
 
 // User schemas
-export const userRoleSchema = z.enum(['corps_member', 'employer', 'admin']);
+export const userRoleSchema = z.enum(['corps_member', 'employer', 'nitda']);
 
 export const userBaseSchema = z.object({
   email: emailSchema,

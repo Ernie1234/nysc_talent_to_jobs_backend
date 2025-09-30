@@ -67,7 +67,7 @@ export const updateApplicationController = asyncHandler(async (req: Request, res
     throw new NotFoundException('User not found');
   }
 
-  if (user.role !== 'employer') {
+  if (user.role === 'corps_member') {
     throw new UnauthorizedException('You do not have permission to update this resource. 🚫');
   }
 
@@ -139,7 +139,7 @@ export const getEmployerApplicationsController = asyncHandler(
       throw new NotFoundException('User not found');
     }
 
-    if (user.role !== 'employer') {
+    if (user.role === 'corps_member') {
       throw new UnauthorizedException('You do not have permission view employers Applications🚫');
     }
 
@@ -166,7 +166,7 @@ export const getEmployerApplicationAnalysisController = asyncHandler(
       throw new NotFoundException('User not found');
     }
 
-    if (user.role !== 'employer') {
+    if (user.role === 'corps_member') {
       throw new UnauthorizedException('Only employers can access application analysis data 🚫');
     }
 

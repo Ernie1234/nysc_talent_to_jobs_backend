@@ -8,6 +8,7 @@ type DocumentStatus = (typeof statusEnum)[number];
 
 // Interfaces for sub-documents
 export interface IPersonalInfo extends Document {
+  _id: Types.ObjectId;
   firstName?: string;
   lastName?: string;
   jobTitle?: string;
@@ -39,6 +40,7 @@ export interface IExperience extends Document {
 }
 
 export interface ISkill extends Document {
+  _id: Types.ObjectId;
   name?: string;
   rating?: number;
 }

@@ -25,7 +25,7 @@ export const createJobController = asyncHandler(async (req: Request, res: Respon
     throw new NotFoundException('User not found');
   }
 
-  if (user.role !== 'employer') {
+  if (user.role === 'corps_member') {
     return res.status(HTTPSTATUS.FORBIDDEN).json({
       success: false,
       message: 'Only employers can create jobs',
@@ -50,7 +50,7 @@ export const updateJobController = asyncHandler(async (req: Request, res: Respon
     throw new NotFoundException('User not found');
   }
 
-  if (user.role !== 'employer') {
+  if (user.role === 'corps_member') {
     return res.status(HTTPSTATUS.FORBIDDEN).json({
       success: false,
       message: 'Only employers can create jobs',
@@ -155,7 +155,7 @@ export const getEmployerAnalysisController = asyncHandler(async (req: Request, r
     throw new NotFoundException('User not found');
   }
 
-  if (user.role !== 'employer') {
+  if (user.role === 'corps_member') {
     return res.status(HTTPSTATUS.FORBIDDEN).json({
       success: false,
       message: 'Only employers can access analysis data',
