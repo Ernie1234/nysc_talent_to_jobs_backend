@@ -1,6 +1,6 @@
 /* eslint-disable indent */
 // utils/role-utils.ts
-export type UserRole = 'corps_member' | 'employer' | 'nitda';
+export type UserRole = 'interns' | 'staff' | 'admin';
 
 export interface RolePermissions {
   canPostJobs: boolean;
@@ -10,7 +10,7 @@ export interface RolePermissions {
   canManageUsers: boolean;
   canAccessAdminPanel: boolean;
   canManageSystem: boolean;
-  canVerifyEmployers: boolean;
+  canVerifyStaff: boolean;
   canManageAllJobs: boolean;
 }
 
@@ -23,19 +23,19 @@ export const getRolePermissions = (role: UserRole): RolePermissions => {
     canManageUsers: false,
     canAccessAdminPanel: false,
     canManageSystem: false,
-    canVerifyEmployers: false,
+    canVerifyStaff: false,
     canManageAllJobs: false,
   };
 
   switch (role) {
-    case 'corps_member':
+    case 'interns':
       return {
         ...basePermissions,
         canApplyToJobs: true,
         canViewAnalytics: true,
       };
 
-    case 'employer':
+    case 'staff':
       return {
         ...basePermissions,
         canPostJobs: true,
@@ -43,7 +43,7 @@ export const getRolePermissions = (role: UserRole): RolePermissions => {
         canViewAnalytics: true,
       };
 
-    case 'nitda':
+    case 'admin':
       return {
         canPostJobs: true,
         canApplyToJobs: true, // NITDA can apply to jobs if needed
@@ -52,7 +52,7 @@ export const getRolePermissions = (role: UserRole): RolePermissions => {
         canManageUsers: true,
         canAccessAdminPanel: true,
         canManageSystem: true,
-        canVerifyEmployers: true,
+        canVerifyStaff: true,
         canManageAllJobs: true, // Can manage all jobs in the system
       };
 
@@ -66,12 +66,12 @@ export const hasPermission = (role: UserRole, permission: keyof RolePermissions)
   return permissions[permission];
 };
 
-// Check if user has employer capabilities
-export const hasEmployerCapabilities = (role: UserRole): boolean => {
-  return role === 'employer' || role === 'nitda';
+// Check if user has staff capabilities
+export const hasStaffCapabilities = (role: UserRole): boolean => {
+  return role === 'staff' || role === 'admin';
 };
 
 // Check if user has admin capabilities
 export const hasAdminCapabilities = (role: UserRole): boolean => {
-  return role === 'nitda';
+  return role === 'admin';
 };

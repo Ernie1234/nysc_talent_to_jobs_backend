@@ -18,6 +18,7 @@
     "nodemon",
     "passport",
     "resend",
+    "SIWES",
     "tsnode",
     "uuid",
     "zod"

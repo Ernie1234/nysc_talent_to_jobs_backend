@@ -16,7 +16,7 @@ export type ApplicationStatus = (typeof applicationStatusEnum)[number];
 export interface IApplicant extends Document {
   _id: Types.ObjectId;
   jobId: Types.ObjectId;
-  employerId: Types.ObjectId;
+  staffId: Types.ObjectId;
   userId: Types.ObjectId;
   documentId?: Types.ObjectId;
   resumeUploadId?: Types.ObjectId;
@@ -36,7 +36,7 @@ const applicantSchema = new Schema<IApplicant>(
       required: true,
       index: true,
     },
-    employerId: {
+    staffId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
@@ -112,10 +112,10 @@ applicantSchema.virtual('job', {
   justOne: true,
 });
 
-// Virtual for employer details (will be populated)
-applicantSchema.virtual('employer', {
+// Virtual for staff details (will be populated)
+applicantSchema.virtual('staff', {
   ref: 'User',
-  localField: 'employerId',
+  localField: 'staffId',
   foreignField: '_id',
   justOne: true,
 });

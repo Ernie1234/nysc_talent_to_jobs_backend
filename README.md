@@ -84,7 +84,7 @@ The User model includes a sophisticated onboarding system:
 
 - `onboardingCompleted`: Boolean flag for completion status
 - `onboardingStep`: Number (1-5) tracking current step
-- Progressive profile completion for both corps members and employers
+- Progressive profile completion for both corps members and staff
 
 ## Environment Variables
 

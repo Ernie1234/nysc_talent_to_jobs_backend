@@ -42,7 +42,7 @@ export const applyToJobService = async (
 
   // Check if user is a corps member
   const user = await UserModel.findById(userId);
-  if (user?.role !== 'corps_member') {
+  if (user?.role !== 'interns') {
     throw new UnauthorizedException('Only corps members can apply to jobs');
   }
 
@@ -99,7 +99,7 @@ export const applyToJobService = async (
     applicant = await ApplicantModel.create({
       jobId: new Types.ObjectId(jobId),
       userId: new Types.ObjectId(userId),
-      employerId: job.employerId._id,
+      staffId: job.staffId._id,
       documentId: data.documentId ? new Types.ObjectId(data.documentId) : undefined,
       resumeUploadId: data.resumeUploadId ? new Types.ObjectId(data.resumeUploadId) : undefined,
       coverLetter: data.coverLetter,
@@ -121,15 +121,15 @@ export const applyToJobService = async (
 
   return { applicant: populatedApplicant!, job };
 };
-export const getEmployerJobApplicationsService = async (
+export const getStaffJobApplicationsService = async (
   jobId: string,
-  employerId: string,
+  staffId: string,
   query: ApplicationQueryInput
 ): Promise<{ applicants: IApplicant[]; total: number; page: number; totalPages: number }> => {
-  // Verify that the employer owns the job
+  // Verify that the staff owns the job
   const job = await JobModel.findOne({
     _id: new Types.ObjectId(jobId),
-    employerId: new Types.ObjectId(employerId),
+    staffId: new Types.ObjectId(staffId),
   });
 
   if (!job) {
@@ -157,18 +157,18 @@ export const getEmployerJobApplicationsService = async (
     totalPages: Math.ceil(total / limit),
   };
 };
-export const getEmployerApplicationsService = async (
-  employerId: string,
+export const getStaffApplicationsService = async (
+  staffId: string,
   query: ApplicationQueryInput
 ): Promise<{ applicants: IApplicant[]; total: number; page: number; totalPages: number }> => {
   const { status, page, limit } = query;
 
-  // Validate employerId is a valid ObjectId
-  if (!Types.ObjectId.isValid(employerId)) {
-    throw new BadRequestException('Invalid employer ID format');
+  // Validate staffId is a valid ObjectId
+  if (!Types.ObjectId.isValid(staffId)) {
+    throw new BadRequestException('Invalid staff ID format');
   }
 
-  const filter: any = { employerId: new Types.ObjectId(employerId) };
+  const filter: any = { staffId: new Types.ObjectId(staffId) };
   if (status) filter.status = status;
 
   const total = await ApplicantModel.countDocuments(filter);
@@ -190,12 +190,12 @@ export const getEmployerApplicationsService = async (
 };
 export const updateApplicationService = async (
   applicationId: string,
-  employerId: string,
+  staffId: string,
   data: UpdateApplicationInput
 ): Promise<IApplicant> => {
   const applicant = await ApplicantModel.findById(applicationId).populate({
     path: 'jobId',
-    match: { employerId: new Types.ObjectId(employerId) },
+    match: { staffId: new Types.ObjectId(staffId) },
   });
 
   if (!applicant || !applicant.jobId) {
@@ -230,9 +230,9 @@ export const getUserApplicationsService = async (
   const applications = await ApplicantModel.find(filter)
     .populate(
       'job',
-      'title employerId jobType experienceLevel workLocation applicationCount viewCount status hiringLocation salaryRange requirements aboutJob jobPeriod'
+      'title staffId jobType experienceLevel workLocation applicationCount viewCount status hiringLocation salaryRange requirements aboutJob jobPeriod'
     )
-    .populate('employer', 'firstName lastName employerProfile') // Populate employer details
+    .populate('staff', 'firstName lastName staffProfile') // Populate staff details
     .populate('resumeDocument')
     .populate('uploadedResume')
     .sort({ appliedAt: -1 })
@@ -253,7 +253,7 @@ export const getApplicationDetailsService = async (
 ): Promise<IApplicant> => {
   const applicant = await ApplicantModel.findById(applicationId)
     .populate('user', 'firstName lastName email profile')
-    .populate('employer', 'firstName lastName email employerProfile')
+    .populate('staff', 'firstName lastName email staffProfile')
     .populate('job', 'title requirements aboutJob salaryRange')
     .populate('resumeDocument')
     .populate('uploadedResume');
@@ -262,11 +262,11 @@ export const getApplicationDetailsService = async (
     throw new NotFoundException('Application not found');
   }
 
-  // Check permissions: either the applicant (corps member) or the employer
+  // Check permissions: either the applicant (corps member) or the staff
   const isOwner = applicant.userId.toString() === userId;
-  const isEmployer = userRole === 'employer' && applicant.employerId.toString() === userId;
+  const isStaff = userRole === 'staff' && applicant.staffId.toString() === userId;
 
-  if (!isOwner && !isEmployer) {
+  if (!isOwner && !isStaff) {
     throw new UnauthorizedException('You do not have permission to view this application');
   }
 
@@ -298,7 +298,7 @@ export const withdrawApplicationService = async (
   });
 };
 
-export interface EmployerApplicationAnalysis {
+export interface staffApplicationAnalysis {
   totalApplications: number;
   applicationStats: {
     pending: number;
@@ -345,16 +345,16 @@ export interface EmployerApplicationAnalysis {
   };
 }
 
-export const getEmployerApplicationAnalysisService = async (
-  employerId: string
-): Promise<EmployerApplicationAnalysis> => {
-  if (!Types.ObjectId.isValid(employerId)) {
-    throw new NotFoundException('Employer not found');
+export const getStaffApplicationAnalysisService = async (
+  staffId: string
+): Promise<staffApplicationAnalysis> => {
+  if (!Types.ObjectId.isValid(staffId)) {
+    throw new NotFoundException('staff not found');
   }
 
-  // Get all applications for this employer
+  // Get all applications for this staff
   const applications = await ApplicantModel.find({
-    employerId: new Types.ObjectId(employerId),
+    staffId: new Types.ObjectId(staffId),
   })
     .populate('userId', 'firstName lastName email')
     .populate('jobId', 'title')

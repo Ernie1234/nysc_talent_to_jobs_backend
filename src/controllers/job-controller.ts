@@ -6,10 +6,10 @@ import {
   createJobService,
   updateJobService,
   getJobService,
-  getEmployerJobsService,
+  getStaffJobsService,
   deleteJobService,
   changeJobStatusService,
-  getEmployerAnalysisService,
+  getStaffAnalysisService,
   getPublicJobDetailsService,
   getPublicJobsService,
   updateJobViewCountService,
@@ -25,10 +25,10 @@ export const createJobController = asyncHandler(async (req: Request, res: Respon
     throw new NotFoundException('User not found');
   }
 
-  if (user.role === 'corps_member') {
+  if (user.role === 'interns') {
     return res.status(HTTPSTATUS.FORBIDDEN).json({
       success: false,
-      message: 'Only employers can create jobs',
+      message: 'Only staff can create jobs',
     });
   }
 
@@ -50,10 +50,10 @@ export const updateJobController = asyncHandler(async (req: Request, res: Respon
     throw new NotFoundException('User not found');
   }
 
-  if (user.role === 'corps_member') {
+  if (user.role === 'interns') {
     return res.status(HTTPSTATUS.FORBIDDEN).json({
       success: false,
-      message: 'Only employers can create jobs',
+      message: 'Only staff can create jobs',
     });
   }
 
@@ -82,7 +82,7 @@ export const getJobController = asyncHandler(async (req: Request, res: Response)
     data: job,
   });
 });
-export const getEmployerJobsController = asyncHandler(async (req: Request, res: Response) => {
+export const getStaffJobsController = asyncHandler(async (req: Request, res: Response) => {
   const query = jobQuerySchema.parse(req.query);
   const user = req.user;
 
@@ -90,7 +90,7 @@ export const getEmployerJobsController = asyncHandler(async (req: Request, res: 
     throw new NotFoundException('User not found');
   }
 
-  const result = await getEmployerJobsService(user.id, query);
+  const result = await getStaffJobsService(user.id, query);
 
   return res.status(HTTPSTATUS.OK).json({
     success: true,
@@ -149,24 +149,24 @@ export const closeJobController = asyncHandler(async (req: Request, res: Respons
   });
 });
 
-export const getEmployerAnalysisController = asyncHandler(async (req: Request, res: Response) => {
+export const getStaffAnalysisController = asyncHandler(async (req: Request, res: Response) => {
   const user = req.user;
   if (!user) {
     throw new NotFoundException('User not found');
   }
 
-  if (user.role === 'corps_member') {
+  if (user.role === 'interns') {
     return res.status(HTTPSTATUS.FORBIDDEN).json({
       success: false,
-      message: 'Only employers can access analysis data',
+      message: 'Only staff can access analysis data',
     });
   }
 
-  const analysis = await getEmployerAnalysisService(user.id);
+  const analysis = await getStaffAnalysisService(user.id);
 
   return res.status(HTTPSTATUS.OK).json({
     success: true,
-    message: 'Employer analysis fetched successfully',
+    message: 'staff analysis fetched successfully',
     data: analysis,
   });
 });

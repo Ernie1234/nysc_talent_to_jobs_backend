@@ -15,9 +15,9 @@ import {
   getUserApplicationsService,
   withdrawApplicationService,
   getApplicationDetailsService,
-  getEmployerApplicationsService,
-  getEmployerApplicationAnalysisService,
-  getEmployerJobApplicationsService,
+  getStaffApplicationsService,
+  getStaffApplicationAnalysisService,
+  getStaffJobApplicationsService,
 } from '@/services/applicant-service';
 
 export const applyToJobController = asyncHandler(async (req: Request, res: Response) => {
@@ -38,7 +38,7 @@ export const applyToJobController = asyncHandler(async (req: Request, res: Respo
   });
 });
 
-export const getEmployerJobApplicationsController = asyncHandler(
+export const getStaffJobApplicationsController = asyncHandler(
   async (req: Request, res: Response) => {
     const { jobId } = req.params;
     const query = applicationQuerySchema.parse(req.query);
@@ -48,7 +48,7 @@ export const getEmployerJobApplicationsController = asyncHandler(
       throw new NotFoundException('User not found');
     }
 
-    const result = await getEmployerJobApplicationsService(jobId!, user.id, query);
+    const result = await getStaffJobApplicationsService(jobId!, user.id, query);
 
     return res.status(HTTPSTATUS.OK).json({
       success: true,
@@ -67,7 +67,7 @@ export const updateApplicationController = asyncHandler(async (req: Request, res
     throw new NotFoundException('User not found');
   }
 
-  if (user.role === 'corps_member') {
+  if (user.role === 'interns') {
     throw new UnauthorizedException('You do not have permission to update this resource. 🚫');
   }
 
@@ -130,51 +130,49 @@ export const getApplicationDetailsController = asyncHandler(async (req: Request,
   });
 });
 
-export const getEmployerApplicationsController = asyncHandler(
-  async (req: Request, res: Response) => {
-    const query = applicationQuerySchema.parse(req.query);
-    const user = req.user;
+export const getStaffApplicationsController = asyncHandler(async (req: Request, res: Response) => {
+  const query = applicationQuerySchema.parse(req.query);
+  const user = req.user;
 
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    if (user.role === 'corps_member') {
-      throw new UnauthorizedException('You do not have permission view employers Applications🚫');
-    }
-
-    // Validate that user.id is a valid ObjectId
-    if (!Types.ObjectId.isValid(user.id)) {
-      throw new BadRequestException('Invalid user ID format');
-    }
-
-    const result = await getEmployerApplicationsService(user.id, query);
-
-    return res.status(HTTPSTATUS.OK).json({
-      success: true,
-      message: 'Your job applications fetched successfully',
-      data: result,
-    });
+  if (!user) {
+    throw new NotFoundException('User not found');
   }
-);
+
+  if (user.role === 'interns') {
+    throw new UnauthorizedException('You do not have permission to view staff Applications 🚫');
+  }
+
+  // Validate that user.id is a valid ObjectId
+  if (!Types.ObjectId.isValid(user.id)) {
+    throw new BadRequestException('Invalid user ID format');
+  }
+
+  const result = await getStaffApplicationsService(user.id, query);
+
+  return res.status(HTTPSTATUS.OK).json({
+    success: true,
+    message: 'Your job applications fetched successfully',
+    data: result,
+  });
+});
 
 // controllers/job-controller.ts - Add this new controller
-export const getEmployerApplicationAnalysisController = asyncHandler(
+export const getStaffApplicationAnalysisController = asyncHandler(
   async (req: Request, res: Response) => {
     const user = req.user;
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    if (user.role === 'corps_member') {
-      throw new UnauthorizedException('Only employers can access application analysis data 🚫');
+    if (user.role === 'interns') {
+      throw new UnauthorizedException('Only staff can access application analysis data 🚫');
     }
 
-    const analysis = await getEmployerApplicationAnalysisService(user.id);
+    const analysis = await getStaffApplicationAnalysisService(user.id);
 
     return res.status(HTTPSTATUS.OK).json({
       success: true,
-      message: 'Employer application analysis fetched successfully',
+      message: 'staff application analysis fetched successfully',
       data: analysis,
     });
   }

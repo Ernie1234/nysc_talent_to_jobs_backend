@@ -57,7 +57,7 @@ export const profileSchema = z.object({
   github: githubUrlSchema,
 });
 
-export const employerProfileSchema = z.object({
+export const staffProfileSchema = z.object({
   companyName: z.string().max(100, 'Company name cannot exceed 100 characters').optional(),
   companySize: z.enum(['1-10', '11-50', '51-200', '201-500', '501-1000', '1000+']).optional(),
   industry: z.string().max(100, 'Industry cannot exceed 100 characters').optional(),
@@ -69,26 +69,26 @@ export const employerProfileSchema = z.object({
   location: z.string().max(100, 'Location cannot exceed 100 characters').optional(),
 });
 
-// User schemas
-export const userRoleSchema = z.enum(['corps_member', 'employer', 'nitda']);
+// User schemas - UPDATED ROLE ENUM
+export const userRoleSchema = z.enum(['CORPS_MEMBER', 'SIWES', 'STAFF', 'ADMIN']);
 
 export const userBaseSchema = z.object({
   email: emailSchema,
   firstName: nameSchema,
   lastName: nameSchema,
-  role: userRoleSchema.default('corps_member'),
+  role: userRoleSchema.default('CORPS_MEMBER'), // Updated default
 });
 
 export const userCreateSchema = userBaseSchema.extend({
   password: passwordSchema,
   profile: profileSchema.optional(),
-  employerProfile: employerProfileSchema.optional(),
+  staffProfile: staffProfileSchema.optional(),
 });
 
 export const userUpdateSchema = userBaseSchema.partial().extend({
   // password: passwordSchema.optional(),
   profile: profileSchema.partial().optional(),
-  employerProfile: employerProfileSchema.partial().optional(),
+  staffProfile: staffProfileSchema.partial().optional(),
   onboardingCompleted: z.boolean().optional(),
   onboardingStep: z.number().min(1).max(5).optional(),
   isEmailVerified: z.boolean().optional(),
@@ -102,7 +102,7 @@ export const userLoginSchema = z.object({
 export const userOnboardingSchema = z.object({
   onboardingStep: z.number().min(1).max(5),
   profile: profileSchema.partial().optional(),
-  employerProfile: employerProfileSchema.partial().optional(),
+  staffProfile: staffProfileSchema.partial().optional(),
 });
 
 export const passwordResetSchema = z.object({
@@ -129,7 +129,7 @@ export const loginSchema = userLoginSchema;
 export type EmailSchemaType = z.infer<typeof emailSchema>;
 export type PasswordSchemaType = z.infer<typeof passwordSchema>;
 export type ProfileSchemaType = z.infer<typeof profileSchema>;
-export type EmployerProfileSchemaType = z.infer<typeof employerProfileSchema>;
+export type staffProfileSchemaType = z.infer<typeof staffProfileSchema>;
 export type UserRoleSchemaType = z.infer<typeof userRoleSchema>;
 export type UserBaseSchemaType = z.infer<typeof userBaseSchema>;
 export type UserCreateSchemaType = z.infer<typeof userCreateSchema>;

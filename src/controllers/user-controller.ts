@@ -35,7 +35,7 @@ export const updateUserController = asyncHandler(async (req: Request, res: Respo
   }
 
   // Destructure the validated data
-  const { profile, employerProfile, ...restOfBody } = parsedBody.data;
+  const { profile, staffProfile, ...restOfBody } = parsedBody.data;
 
   const userId = req.user?._id;
   if (!userId) {
@@ -46,7 +46,7 @@ export const updateUserController = asyncHandler(async (req: Request, res: Respo
 
   const user = await updateUserService(
     userId,
-    { profile, employerProfile, ...restOfBody },
+    { profile, staffProfile, ...restOfBody },
     profilePic
   );
 

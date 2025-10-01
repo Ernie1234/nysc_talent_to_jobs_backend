@@ -47,12 +47,12 @@ export interface IUser extends Document {
   githubId?: string;
   firstName: string;
   lastName: string;
-  role: 'corps_member' | 'employer' | 'nitda';
+  role: 'CORPS_MEMBER' | 'SIWES' | 'STAFF' | 'ADMIN';
   onboardingCompleted: boolean;
   onboardingStep: number;
   profile?: IUserProfile;
   personalInfo?: Types.ObjectId;
-  employerProfile?: {
+  staffProfile?: {
     companyName?: string;
     companySize?: string;
     industry?: string;
@@ -132,8 +132,8 @@ const userSchema = new Schema<IUser>(
     },
     role: {
       type: String,
-      enum: ['corps_member', 'employer', 'nitda'],
-      default: 'corps_member',
+      enum: ['CORPS_MEMBER', 'SIWES', 'STAFF', 'ADMIN'],
+      default: 'CORPS_MEMBER',
     },
     onboardingCompleted: {
       type: Boolean,
@@ -190,7 +190,7 @@ const userSchema = new Schema<IUser>(
       type: Schema.Types.ObjectId,
       ref: 'PersonalInfo',
     },
-    employerProfile: {
+    staffProfile: {
       companyName: {
         type: String,
         maxlength: [100, 'Company name cannot exceed 100 characters'],
@@ -239,7 +239,7 @@ const userSchema = new Schema<IUser>(
     toObject: {
       virtuals: true,
     },
-  }
+  },
 );
 
 // Index for faster queries

@@ -16,12 +16,12 @@ export const requireNITDARole = asyncHandler(
   }
 );
 
-export const requireEmployerOrNITDA = asyncHandler(
+export const requirestaffOrNITDA = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const user = req.user;
 
-    if (!user || !(user.role === 'employer' || user.role === 'nitda')) {
-      throw new UnauthorizedException('This action requires employer or NITDA privileges');
+    if (!user || !(user.role === 'staff' || user.role === 'admin')) {
+      throw new UnauthorizedException('This action requires staff or NITDA privileges');
     }
 
     next();

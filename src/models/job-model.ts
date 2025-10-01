@@ -50,7 +50,7 @@ export interface IHiringLocation {
 // Job interface
 export interface IJob extends Document {
   _id: Types.ObjectId;
-  employerId: Types.ObjectId;
+  staffId: Types.ObjectId;
   title: string;
   jobType: JobType;
   experienceLevel: ExperienceLevel;
@@ -116,7 +116,7 @@ const hiringLocationSchema = new Schema<IHiringLocation>(
 
 const jobSchema = new Schema<IJob>(
   {
-    employerId: {
+    staffId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
@@ -219,7 +219,7 @@ const jobSchema = new Schema<IJob>(
 );
 
 // Indexes for better query performance
-jobSchema.index({ employerId: 1, status: 1 });
+jobSchema.index({ staffId: 1, status: 1 });
 jobSchema.index({ status: 1, createdAt: -1 });
 jobSchema.index({ 'hiringLocation.type': 1, 'hiringLocation.state': 1 });
 jobSchema.index({ jobType: 1, experienceLevel: 1 });
@@ -257,12 +257,12 @@ jobSchema.pre('save', function (next) {
 });
 
 jobSchema.pre('save', async function (next) {
-  // Only set isNitda if it's a new document or employerId is modified
-  if (this.isNew || this.isModified('employerId')) {
+  // Only set isNitda if it's a new document or staffId is modified
+  if (this.isNew || this.isModified('staffId')) {
     try {
       // Use the imported UserModel directly for proper typing
-      const user = await UserModel.findById(this.employerId).select('role');
-      if (user && user.role === 'nitda') {
+      const user = await UserModel.findById(this.staffId).select('role');
+      if (user && user.role === 'admin') {
         this.isNitda = true;
       }
     } catch (error) {

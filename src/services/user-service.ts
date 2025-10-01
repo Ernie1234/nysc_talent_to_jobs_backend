@@ -32,7 +32,7 @@ export const updateUserService = async (
   const updateQuery: any = {
     $set: {
       ...updateData.profile,
-      ...updateData.employerProfile,
+      ...updateData.staffProfile,
       ...updateData.restOfBody,
     },
   };
