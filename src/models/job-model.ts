@@ -59,7 +59,6 @@ export interface IJob extends Document {
   skills: string[];
   aboutJob: string;
   requirements: string;
-  salaryRange: ISalaryRange;
   hiringLocation: IHiringLocation;
   status: JobStatus;
   applicationCount: number;
@@ -72,30 +71,6 @@ export interface IJob extends Document {
   updatedAt: Date;
   __v?: number;
 }
-
-const salaryRangeSchema = new Schema<ISalaryRange>(
-  {
-    min: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-    max: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-    currency: {
-      type: String,
-      default: 'NR',
-    },
-    isPublic: {
-      type: Boolean,
-      default: true,
-    },
-  },
-  { _id: false }
-);
 
 const hiringLocationSchema = new Schema<IHiringLocation>(
   {
@@ -164,10 +139,7 @@ const jobSchema = new Schema<IJob>(
       required: [true, 'Job requirements are required'],
       maxlength: [1000, 'Job requirements cannot exceed 1000 characters'],
     },
-    salaryRange: {
-      type: salaryRangeSchema,
-      required: true,
-    },
+
     hiringLocation: {
       type: hiringLocationSchema,
       required: true,
@@ -262,7 +234,7 @@ jobSchema.pre('save', async function (next) {
     try {
       // Use the imported UserModel directly for proper typing
       const user = await UserModel.findById(this.staffId).select('role');
-      if (user && user.role === 'admin') {
+      if ((user && user.role === 'ADMIN') || user?.role === 'STAFF') {
         this.isNitda = true;
       }
     } catch (error) {

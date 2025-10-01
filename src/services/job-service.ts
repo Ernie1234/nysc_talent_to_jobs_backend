@@ -26,7 +26,7 @@ export const createJobService = async (staffId: string, data: CreateJobInput): P
   const jobData = {
     ...data,
     staffId: new Types.ObjectId(staffId),
-    isNitda: staff?.role === 'admin' || 'staff',
+    isNitda: staff?.role === 'ADMIN' || staff?.role === 'STAFF',
   };
 
   const job = await JobModel.create(jobData);

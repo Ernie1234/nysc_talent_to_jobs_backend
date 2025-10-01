@@ -15,7 +15,7 @@ import {
   updateJobViewCountService,
 } from '@/services/job-service';
 import { HTTPSTATUS } from '@/config/http-config';
-import { BadRequestException, NotFoundException } from '@/utils/app-error';
+import { BadRequestException, NotFoundException, UnauthorizedException } from '@/utils/app-error';
 
 export const createJobController = asyncHandler(async (req: Request, res: Response) => {
   const jobData = createJobSchema.parse(req.body);
@@ -25,11 +25,8 @@ export const createJobController = asyncHandler(async (req: Request, res: Respon
     throw new NotFoundException('User not found');
   }
 
-  if (user.role === 'interns') {
-    return res.status(HTTPSTATUS.FORBIDDEN).json({
-      success: false,
-      message: 'Only staff can create jobs',
-    });
+  if (user.role === 'CORPS_MEMBER' || user.role === 'SIWES') {
+    throw new UnauthorizedException('Only staff can create jobs');
   }
 
   const job = await createJobService(user.id, jobData);
@@ -50,11 +47,8 @@ export const updateJobController = asyncHandler(async (req: Request, res: Respon
     throw new NotFoundException('User not found');
   }
 
-  if (user.role === 'interns') {
-    return res.status(HTTPSTATUS.FORBIDDEN).json({
-      success: false,
-      message: 'Only staff can create jobs',
-    });
+  if (user.role === 'CORPS_MEMBER' || user.role === 'SIWES') {
+    throw new UnauthorizedException('Only staff can create jobs');
   }
 
   const job = await updateJobService(jobId!, user.id, updateData);
@@ -155,7 +149,7 @@ export const getStaffAnalysisController = asyncHandler(async (req: Request, res:
     throw new NotFoundException('User not found');
   }
 
-  if (user.role === 'interns') {
+  if (user.role === 'CORPS_MEMBER' || user.role === 'SIWES') {
     return res.status(HTTPSTATUS.FORBIDDEN).json({
       success: false,
       message: 'Only staff can access analysis data',

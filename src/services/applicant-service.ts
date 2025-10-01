@@ -42,7 +42,7 @@ export const applyToJobService = async (
 
   // Check if user is a corps member
   const user = await UserModel.findById(userId);
-  if (user?.role !== 'interns') {
+  if (user?.role !== 'CORPS_MEMBER' && user?.role !== 'SIWES') {
     throw new UnauthorizedException('Only corps members can apply to jobs');
   }
 
@@ -230,7 +230,7 @@ export const getUserApplicationsService = async (
   const applications = await ApplicantModel.find(filter)
     .populate(
       'job',
-      'title staffId jobType experienceLevel workLocation applicationCount viewCount status hiringLocation salaryRange requirements aboutJob jobPeriod'
+      'title staffId jobType experienceLevel workLocation applicationCount viewCount status hiringLocation requirements aboutJob jobPeriod'
     )
     .populate('staff', 'firstName lastName staffProfile') // Populate staff details
     .populate('resumeDocument')
@@ -254,7 +254,7 @@ export const getApplicationDetailsService = async (
   const applicant = await ApplicantModel.findById(applicationId)
     .populate('user', 'firstName lastName email profile')
     .populate('staff', 'firstName lastName email staffProfile')
-    .populate('job', 'title requirements aboutJob salaryRange')
+    .populate('job', 'title requirements aboutJob')
     .populate('resumeDocument')
     .populate('uploadedResume');
 
