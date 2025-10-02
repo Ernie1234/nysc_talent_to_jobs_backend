@@ -50,7 +50,7 @@ export interface IHiringLocation {
 // Job interface
 export interface IJob extends Document {
   _id: Types.ObjectId;
-  employerId: Types.ObjectId;
+  staffId: Types.ObjectId;
   title: string;
   jobType: JobType;
   experienceLevel: ExperienceLevel;
@@ -59,7 +59,6 @@ export interface IJob extends Document {
   skills: string[];
   aboutJob: string;
   requirements: string;
-  salaryRange: ISalaryRange;
   hiringLocation: IHiringLocation;
   status: JobStatus;
   applicationCount: number;
@@ -72,30 +71,6 @@ export interface IJob extends Document {
   updatedAt: Date;
   __v?: number;
 }
-
-const salaryRangeSchema = new Schema<ISalaryRange>(
-  {
-    min: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-    max: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-    currency: {
-      type: String,
-      default: 'NR',
-    },
-    isPublic: {
-      type: Boolean,
-      default: true,
-    },
-  },
-  { _id: false }
-);
 
 const hiringLocationSchema = new Schema<IHiringLocation>(
   {
@@ -116,7 +91,7 @@ const hiringLocationSchema = new Schema<IHiringLocation>(
 
 const jobSchema = new Schema<IJob>(
   {
-    employerId: {
+    staffId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
@@ -164,10 +139,7 @@ const jobSchema = new Schema<IJob>(
       required: [true, 'Job requirements are required'],
       maxlength: [1000, 'Job requirements cannot exceed 1000 characters'],
     },
-    salaryRange: {
-      type: salaryRangeSchema,
-      required: true,
-    },
+
     hiringLocation: {
       type: hiringLocationSchema,
       required: true,
@@ -219,7 +191,7 @@ const jobSchema = new Schema<IJob>(
 );
 
 // Indexes for better query performance
-jobSchema.index({ employerId: 1, status: 1 });
+jobSchema.index({ staffId: 1, status: 1 });
 jobSchema.index({ status: 1, createdAt: -1 });
 jobSchema.index({ 'hiringLocation.type': 1, 'hiringLocation.state': 1 });
 jobSchema.index({ jobType: 1, experienceLevel: 1 });
@@ -257,12 +229,12 @@ jobSchema.pre('save', function (next) {
 });
 
 jobSchema.pre('save', async function (next) {
-  // Only set isNitda if it's a new document or employerId is modified
-  if (this.isNew || this.isModified('employerId')) {
+  // Only set isNitda if it's a new document or staffId is modified
+  if (this.isNew || this.isModified('staffId')) {
     try {
       // Use the imported UserModel directly for proper typing
-      const user = await UserModel.findById(this.employerId).select('role');
-      if (user && user.role === 'nitda') {
+      const user = await UserModel.findById(this.staffId).select('role');
+      if ((user && user.role === 'ADMIN') || user?.role === 'STAFF') {
         this.isNitda = true;
       }
     } catch (error) {

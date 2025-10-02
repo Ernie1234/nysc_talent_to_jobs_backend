@@ -31,7 +31,7 @@ export interface PaginatedResponse<T> {
   };
 }
 
-export type UserRole = 'corps_member' | 'employer' | 'admin';
+export type UserRole = 'interns' | 'staff' | 'admin';
 
 export interface OnboardingData {
   step: number;

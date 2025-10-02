@@ -84,11 +84,11 @@ const calculateProfileCompleteness = (user: any): number => {
   if (user.profile?.skills?.length > 0) completedFields += 1;
   totalFields += 1;
 
-  // Employer profile (if applicable)
-  if (user.role === 'employer') {
-    const employerFields = ['companyName', 'companySize', 'industry', 'website'];
-    totalFields += employerFields.length;
-    completedFields += employerFields.filter(field => user.employerProfile?.[field]).length;
+  // staff profile (if applicable)
+  if (user.role === 'staff') {
+    const staffFields = ['companyName', 'companySize', 'industry', 'website'];
+    totalFields += staffFields.length;
+    completedFields += staffFields.filter(field => user.staffProfile?.[field]).length;
   }
 
   return Math.round((completedFields / totalFields) * 100);
@@ -123,7 +123,7 @@ export const getUserProfileController = asyncHandler(async (req: Request, res: R
       ...userData.profile,
       skills: userData.profile?.skills ?? [],
     },
-    employerProfile: userData.employerProfile ?? {},
+    staffProfile: userData.staffProfile ?? {},
     accountInfo: {
       isEmailVerified: userData.isEmailVerified,
       onboardingCompleted: userData.onboardingCompleted,

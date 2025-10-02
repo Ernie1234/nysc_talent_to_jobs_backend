@@ -3,24 +3,37 @@ import { compareValue, hashValue } from '@/utils/bcrypt-config';
 
 // Skill level enum
 export enum SkillLevel {
-  BEGINNER = 'beginner',
-  INTERMEDIATE = 'intermediate',
-  ADVANCED = 'advanced',
-  EXPERT = 'expert',
+  BEGINNER = 1,
+  INTERMEDIATE = 2,
+  ADVANCED = 3,
+  EXPERT = 4,
+  MASTER = 5,
 }
 
 // Skill interface
 export interface ISkill {
-  _id: Types.ObjectId;
+  _id?: Types.ObjectId;
   name: string;
-  level: SkillLevel;
-  yearsOfExperience?: number;
+  level: number;
+}
+
+export interface IDocument {
+  _id?: Types.ObjectId;
+  fileName: string;
+  fileUrl: string;
+  fileType: 'ppa_letter' | 'request_letter';
+  fileSize: number;
+  uploadedAt: Date;
+  description?: string;
 }
 
 // Enhanced profile interface
 export interface IUserProfile {
   phoneNumber?: string;
   stateOfService?: string;
+  tertiarySchool?: string;
+  stateCode?: string;
+  callUpNumber?: string;
   placeOfPrimaryAssignment?: string;
   address?: {
     street?: string;
@@ -37,6 +50,7 @@ export interface IUserProfile {
   github?: string;
   dateOfBirth?: Date;
   gender?: string;
+  status?: 'ACCEPTED' | 'REJECTED' | 'SUSPENDED' | 'PENDING';
 }
 
 export interface IUser extends Document {
@@ -47,12 +61,12 @@ export interface IUser extends Document {
   githubId?: string;
   firstName: string;
   lastName: string;
-  role: 'corps_member' | 'employer' | 'nitda';
+  role: 'CORPS_MEMBER' | 'SIWES' | 'STAFF' | 'ADMIN';
   onboardingCompleted: boolean;
   onboardingStep: number;
   profile?: IUserProfile;
   personalInfo?: Types.ObjectId;
-  employerProfile?: {
+  staffProfile?: {
     companyName?: string;
     companySize?: string;
     industry?: string;
@@ -79,15 +93,11 @@ const skillSchema = new Schema<ISkill>({
     maxlength: [50, 'Skill name cannot exceed 50 characters'],
   },
   level: {
-    type: String,
-    enum: Object.values(SkillLevel),
+    type: Number, // Change from String to Number
+    min: 1,
+    max: 5,
     required: [true, 'Skill level is required'],
-    default: SkillLevel.BEGINNER,
-  },
-  yearsOfExperience: {
-    type: Number,
-    min: 0,
-    max: 50,
+    default: 1, // Beginner level as 1
   },
 });
 
@@ -132,8 +142,8 @@ const userSchema = new Schema<IUser>(
     },
     role: {
       type: String,
-      enum: ['corps_member', 'employer', 'nitda'],
-      default: 'corps_member',
+      enum: ['CORPS_MEMBER', 'SIWES', 'STAFF', 'ADMIN'],
+      default: 'CORPS_MEMBER',
     },
     onboardingCompleted: {
       type: Boolean,
@@ -153,6 +163,18 @@ const userSchema = new Schema<IUser>(
       stateOfService: {
         type: String,
         maxlength: [100, 'State of service cannot exceed 100 characters'],
+      },
+      tertiarySchool: {
+        type: String,
+        maxlength: [500, 'Tertiary school cannot exceed 500 characters'],
+      },
+      stateCode: {
+        type: String,
+        maxlength: [20, 'State code cannot exceed 20 characters'],
+      },
+      callUpNumber: {
+        type: String,
+        maxlength: [50, 'Call-up number cannot exceed 50 characters'],
       },
       placeOfPrimaryAssignment: {
         type: String,
@@ -185,12 +207,17 @@ const userSchema = new Schema<IUser>(
         type: String,
         enum: ['male', 'female', 'other', 'prefer-not-to-say'],
       },
+      status: {
+        type: String,
+        enum: ['ACCEPTED', 'REJECTED', 'SUSPENDED', 'PENDING'],
+        default: 'PENDING',
+      },
     },
     personalInfo: {
       type: Schema.Types.ObjectId,
       ref: 'PersonalInfo',
     },
-    employerProfile: {
+    staffProfile: {
       companyName: {
         type: String,
         maxlength: [100, 'Company name cannot exceed 100 characters'],

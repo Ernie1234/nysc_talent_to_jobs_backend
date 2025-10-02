@@ -4,18 +4,18 @@ import {
   createJobController,
   updateJobController,
   getJobController,
-  getEmployerJobsController,
+  getStaffJobsController,
   deleteJobController,
   publishJobController,
   closeJobController,
-  getEmployerAnalysisController,
+  getStaffAnalysisController,
   getPublicJobsController,
   getPublicJobDetailsController,
   updateJobViewCountController,
 } from '@/controllers/job-controller';
 import {
   applyToJobController,
-  getEmployerJobApplicationsController,
+  getStaffJobApplicationsController,
 } from '@/controllers/applicant-controller';
 
 const router = Router();
@@ -25,13 +25,13 @@ router.use(passportAuthenticateJwt);
 
 // Job CRUD routes
 router.post('/', createJobController);
-router.get('/', getEmployerJobsController);
+router.get('/', getStaffJobsController);
 // Corps Member routes
 router.get('/users', getPublicJobsController);
 router.get('/:jobId/users', getPublicJobDetailsController);
 router.patch('/:jobId/users/view-count', updateJobViewCountController);
 
-router.get('/analysis', getEmployerAnalysisController);
+router.get('/analysis', getStaffAnalysisController);
 router.get('/:jobId', getJobController);
 router.put('/:jobId', updateJobController);
 router.delete('/:jobId', deleteJobController);
@@ -42,6 +42,6 @@ router.patch('/:jobId/close', closeJobController);
 
 // Job Applications
 router.post('/:jobId/apply', applyToJobController);
-router.get('/:jobId/applications', getEmployerJobApplicationsController);
+router.get('/:jobId/applications', getStaffJobApplicationsController);
 
 export default router;

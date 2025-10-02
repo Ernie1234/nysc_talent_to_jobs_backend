@@ -142,7 +142,7 @@ The User model includes comprehensive fields for the NYSC platform:
 
 **Core Fields:**
 - `email`, `password`, `firstName`, `lastName`
-- `role`: 'corps_member' | 'employer' | 'admin'
+- `role`: 'interns' | 'staff' | 'admin'
 
 **Onboarding System:**
 - `onboardingCompleted`: Boolean flag for completion status
@@ -151,7 +151,7 @@ The User model includes comprehensive fields for the NYSC platform:
 
 **Profile Data:**
 - Corps member: `stateOfService`, `placeOfPrimaryAssignment`, `skills`, `bio`
-- Employer: `companyName`, `companySize`, `industry`, `companyDescription`
+- staff: `companyName`, `companySize`, `industry`, `companyDescription`
 - File uploads: `profilePicture`, `resume`
 - Social links: `linkedin`, `github`
 

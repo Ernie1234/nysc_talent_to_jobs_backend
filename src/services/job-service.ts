@@ -6,8 +6,8 @@ import { NotFoundException } from '@/utils/app-error';
 import { UserModel } from '@/models/user-model';
 import { ApplicantModel } from '@/models/applicant-model';
 
-export interface JobWithEmployer extends IJob {
-  employerDetails?: {
+export interface JobWithStaff extends IJob {
+  staffDetails?: {
     firstName: string;
     lastName: string;
     email: string;
@@ -20,13 +20,13 @@ export interface JobWithEmployer extends IJob {
   };
 }
 
-export const createJobService = async (employerId: string, data: CreateJobInput): Promise<IJob> => {
-  const employer = await UserModel.findById(employerId).select('role');
+export const createJobService = async (staffId: string, data: CreateJobInput): Promise<IJob> => {
+  const staff = await UserModel.findById(staffId).select('role');
 
   const jobData = {
     ...data,
-    employerId: new Types.ObjectId(employerId),
-    isNitda: employer?.role === 'nitda',
+    staffId: new Types.ObjectId(staffId),
+    isNitda: staff?.role === 'ADMIN' || staff?.role === 'STAFF',
   };
 
   const job = await JobModel.create(jobData);
@@ -35,12 +35,12 @@ export const createJobService = async (employerId: string, data: CreateJobInput)
 
 export const updateJobService = async (
   jobId: string,
-  employerId: string,
+  staffId: string,
   data: UpdateJobInput
 ): Promise<IJob> => {
   const job = await JobModel.findOne({
     _id: new Types.ObjectId(jobId),
-    employerId: new Types.ObjectId(employerId),
+    staffId: new Types.ObjectId(staffId),
   });
 
   if (!job) {
@@ -53,12 +53,12 @@ export const updateJobService = async (
   return job;
 };
 
-export const getJobService = async (jobId: string, employerId: string): Promise<IJob> => {
+export const getJobService = async (jobId: string, staffId: string): Promise<IJob> => {
   const job = await JobModel.findOne({
     _id: new Types.ObjectId(jobId),
-    employerId: new Types.ObjectId(employerId),
+    staffId: new Types.ObjectId(staffId),
   })
-    .populate('employerId', 'firstName lastName email employerProfile')
+    .populate('staffId', 'firstName lastName email staffProfile')
     .populate({
       path: 'applicants',
       populate: {
@@ -73,8 +73,8 @@ export const getJobService = async (jobId: string, employerId: string): Promise<
 
   return job;
 };
-export const getEmployerJobsService = async (
-  employerId: string,
+export const getStaffJobsService = async (
+  staffId: string,
   query: JobQueryInput
 ): Promise<{
   jobs: IJob[];
@@ -84,7 +84,7 @@ export const getEmployerJobsService = async (
 }> => {
   const { status, page, limit, search, jobType, experienceLevel, workLocation } = query;
 
-  const filter: any = { employerId: new Types.ObjectId(employerId) };
+  const filter: any = { staffId: new Types.ObjectId(staffId) };
 
   if (status) filter.status = status;
   if (jobType) filter.jobType = jobType;
@@ -100,18 +100,18 @@ export const getEmployerJobsService = async (
     ];
   }
 
-  // Get employer details separately
-  const employer = await UserModel.findById(employerId)
-    .select('firstName lastName email employerProfile')
+  // Get staff details separately
+  const staff = await UserModel.findById(staffId)
+    .select('firstName lastName email staffProfile')
     .lean();
 
-  if (!employer) {
-    throw new NotFoundException('Employer not found');
+  if (!staff) {
+    throw new NotFoundException('staff not found');
   }
 
   const total = await JobModel.countDocuments(filter);
   const jobs = await JobModel.find(filter)
-    .populate('employerId', 'firstName lastName email employerProfile role')
+    .populate('staffId', 'firstName lastName email staffProfile role')
     .populate({
       path: 'applicants',
       populate: {
@@ -135,10 +135,10 @@ export const getEmployerJobsService = async (
   };
 };
 
-export const deleteJobService = async (jobId: string, employerId: string): Promise<void> => {
+export const deleteJobService = async (jobId: string, staffId: string): Promise<void> => {
   const result = await JobModel.deleteOne({
     _id: new Types.ObjectId(jobId),
-    employerId: new Types.ObjectId(employerId),
+    staffId: new Types.ObjectId(staffId),
   });
 
   if (result.deletedCount === 0) {
@@ -148,12 +148,12 @@ export const deleteJobService = async (jobId: string, employerId: string): Promi
 
 export const changeJobStatusService = async (
   jobId: string,
-  employerId: string,
+  staffId: string,
   status: JobStatus
 ): Promise<IJob> => {
   const job = await JobModel.findOne({
     _id: new Types.ObjectId(jobId),
-    employerId: new Types.ObjectId(employerId),
+    staffId: new Types.ObjectId(staffId),
   });
 
   if (!job) {
@@ -165,7 +165,7 @@ export const changeJobStatusService = async (
 
   return job;
 };
-export interface EmployerStats {
+export interface staffStats {
   totalJobs: number;
   publishedJobs: number;
   draftedJobs: number;
@@ -188,9 +188,9 @@ export interface EmployerStats {
   }>;
 }
 
-export const getEmployerAnalysisService = async (employerId: string): Promise<EmployerStats> => {
+export const getStaffAnalysisService = async (staffId: string): Promise<staffStats> => {
   const jobs = await JobModel.find({
-    employerId: new Types.ObjectId(employerId),
+    staffId: new Types.ObjectId(staffId),
   })
     .select('_id title status applicationCount viewCount createdAt publishedAt')
     .sort({ createdAt: -1 })
@@ -337,7 +337,7 @@ export const getPublicJobsService = async (
 
   const total = await JobModel.countDocuments(filter);
   const jobs = await JobModel.find(filter)
-    .populate('employerId', 'firstName lastName email employerProfile companyName')
+    .populate('staffId', 'firstName lastName email staffProfile companyName')
     .select('-applicants') // Don't include applicants data for corps members
     .sort({ createdAt: -1 })
     .skip((page - 1) * limit)
@@ -356,7 +356,7 @@ export const getPublicJobDetailsService = async (jobId: string): Promise<IJob> =
     _id: new Types.ObjectId(jobId),
     status: 'published',
   })
-    .populate('employerId', 'firstName lastName email employerProfile companyName')
+    .populate('staffId', 'firstName lastName email staffProfile companyName')
     .select('-applicants') // Don't include applicants data
     .lean();
 
@@ -381,7 +381,7 @@ export const updateJobViewCountService = async (jobId: string): Promise<IJob> =>
       runValidators: true,
     }
   )
-    .populate('employerId', 'firstName lastName email employerProfile companyName')
+    .populate('staffId', 'firstName lastName email staffProfile companyName')
     .select('-applicants') // Don't include applicants data
     .lean();
 

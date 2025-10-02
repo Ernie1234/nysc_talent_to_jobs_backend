@@ -6,6 +6,9 @@ import documentRoute from './document-routes';
 import resumeUploadRoute from './resume-upload-routes';
 import jobRoutes from './job-routes';
 import applicantRoutes from './applicant-routes';
+import onBoardingRoutes from './onboarding-routes';
+import coursesRoute from './course-routes';
+import adminRoutes from './admin-routes';
 
 const apiRouter: Router = Router();
 
@@ -16,5 +19,8 @@ apiRouter.use('/documents', documentRoute);
 apiRouter.use('/resume-uploads', resumeUploadRoute);
 apiRouter.use('/jobs', jobRoutes);
 apiRouter.use('/applications', applicantRoutes);
+apiRouter.use('/onboarding', onBoardingRoutes);
+apiRouter.use('/courses', coursesRoute);
+apiRouter.use('/admin', adminRoutes);
 
 export default apiRouter;

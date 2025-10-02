@@ -6,8 +6,8 @@ import { NotFoundException, UnauthorizedException } from '@/utils/app-error';
 import { signJwtToken } from '@/utils/jwt-config';
 import { LoginSchemaType, RegisterSchemaType } from '@/validations/auth-validation';
 
-// NITDA employer profile configuration
-const NITDA_EMPLOYER_PROFILE = {
+// NITDA staff profile configuration
+const NITDA_STAFF_PROFILE = {
   companyName: 'National Information Technology Development Agency (NITDA)',
   companySize: '1000+',
   industry: 'technology',
@@ -31,17 +31,17 @@ export const registerService = async (
 
   // Determine role and profile based on email
   let userRole = role;
-  let employerProfile = undefined;
+  let staffProfile = undefined;
   let onboardingCompleted = false;
 
   // Auto-detect NITDA users and set up their profile
   if (email.toLowerCase().endsWith('@nitda.gov.ng')) {
-    userRole = 'employer';
-    employerProfile = NITDA_EMPLOYER_PROFILE;
-    onboardingCompleted = true; // NITDA users skip onboarding
+    userRole = 'STAFF';
+    staffProfile = NITDA_STAFF_PROFILE;
+    onboardingCompleted = true;
 
     // Log the automatic NITDA user creation
-    console.log(`Creating NITDA user: ${email} with auto-filled employer profile`);
+    console.log(`Creating NITDA user: ${email} with auto-filled staff profile`);
   }
 
   // Create user data
@@ -52,7 +52,7 @@ export const registerService = async (
     password,
     role: userRole,
     onboardingCompleted,
-    employerProfile,
+    staffProfile,
   };
 
   const newUser = new UserModel(userData);

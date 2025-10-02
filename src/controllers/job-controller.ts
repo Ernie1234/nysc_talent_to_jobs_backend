@@ -6,16 +6,16 @@ import {
   createJobService,
   updateJobService,
   getJobService,
-  getEmployerJobsService,
+  getStaffJobsService,
   deleteJobService,
   changeJobStatusService,
-  getEmployerAnalysisService,
+  getStaffAnalysisService,
   getPublicJobDetailsService,
   getPublicJobsService,
   updateJobViewCountService,
 } from '@/services/job-service';
 import { HTTPSTATUS } from '@/config/http-config';
-import { BadRequestException, NotFoundException } from '@/utils/app-error';
+import { BadRequestException, NotFoundException, UnauthorizedException } from '@/utils/app-error';
 
 export const createJobController = asyncHandler(async (req: Request, res: Response) => {
   const jobData = createJobSchema.parse(req.body);
@@ -25,11 +25,8 @@ export const createJobController = asyncHandler(async (req: Request, res: Respon
     throw new NotFoundException('User not found');
   }
 
-  if (user.role === 'corps_member') {
-    return res.status(HTTPSTATUS.FORBIDDEN).json({
-      success: false,
-      message: 'Only employers can create jobs',
-    });
+  if (user.role === 'CORPS_MEMBER' || user.role === 'SIWES') {
+    throw new UnauthorizedException('Only staff can create jobs');
   }
 
   const job = await createJobService(user.id, jobData);
@@ -50,11 +47,8 @@ export const updateJobController = asyncHandler(async (req: Request, res: Respon
     throw new NotFoundException('User not found');
   }
 
-  if (user.role === 'corps_member') {
-    return res.status(HTTPSTATUS.FORBIDDEN).json({
-      success: false,
-      message: 'Only employers can create jobs',
-    });
+  if (user.role === 'CORPS_MEMBER' || user.role === 'SIWES') {
+    throw new UnauthorizedException('Only staff can create jobs');
   }
 
   const job = await updateJobService(jobId!, user.id, updateData);
@@ -82,7 +76,7 @@ export const getJobController = asyncHandler(async (req: Request, res: Response)
     data: job,
   });
 });
-export const getEmployerJobsController = asyncHandler(async (req: Request, res: Response) => {
+export const getStaffJobsController = asyncHandler(async (req: Request, res: Response) => {
   const query = jobQuerySchema.parse(req.query);
   const user = req.user;
 
@@ -90,7 +84,7 @@ export const getEmployerJobsController = asyncHandler(async (req: Request, res: 
     throw new NotFoundException('User not found');
   }
 
-  const result = await getEmployerJobsService(user.id, query);
+  const result = await getStaffJobsService(user.id, query);
 
   return res.status(HTTPSTATUS.OK).json({
     success: true,
@@ -149,24 +143,24 @@ export const closeJobController = asyncHandler(async (req: Request, res: Respons
   });
 });
 
-export const getEmployerAnalysisController = asyncHandler(async (req: Request, res: Response) => {
+export const getStaffAnalysisController = asyncHandler(async (req: Request, res: Response) => {
   const user = req.user;
   if (!user) {
     throw new NotFoundException('User not found');
   }
 
-  if (user.role === 'corps_member') {
+  if (user.role === 'CORPS_MEMBER' || user.role === 'SIWES') {
     return res.status(HTTPSTATUS.FORBIDDEN).json({
       success: false,
-      message: 'Only employers can access analysis data',
+      message: 'Only staff can access analysis data',
     });
   }
 
-  const analysis = await getEmployerAnalysisService(user.id);
+  const analysis = await getStaffAnalysisService(user.id);
 
   return res.status(HTTPSTATUS.OK).json({
     success: true,
-    message: 'Employer analysis fetched successfully',
+    message: 'staff analysis fetched successfully',
     data: analysis,
   });
 });

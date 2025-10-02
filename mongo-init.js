@@ -11,25 +11,25 @@ db.createCollection('users', {
         email: {
           bsonType: 'string',
           pattern: '^\\S+@\\S+\\.\\S+$',
-          description: 'must be a valid email and is required'
+          description: 'must be a valid email and is required',
         },
         firstName: {
           bsonType: 'string',
           maxLength: 50,
-          description: 'must be a string with max 50 characters and is required'
+          description: 'must be a string with max 50 characters and is required',
         },
         lastName: {
           bsonType: 'string',
           maxLength: 50,
-          description: 'must be a string with max 50 characters and is required'
+          description: 'must be a string with max 50 characters and is required',
         },
         role: {
-          enum: ['corps_member', 'employer', 'admin'],
-          description: 'must be one of the enum values'
-        }
-      }
-    }
-  }
+          enum: ['interns', 'staff', 'admin'],
+          description: 'must be one of the enum values',
+        },
+      },
+    },
+  },
 });
 
 // Create indexes
