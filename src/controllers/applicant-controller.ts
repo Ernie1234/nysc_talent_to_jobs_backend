@@ -67,7 +67,7 @@ export const updateApplicationController = asyncHandler(async (req: Request, res
     throw new NotFoundException('User not found');
   }
 
-  if (user.role === 'interns') {
+  if (user.role === 'SIWES' || user.role === 'CORPS_MEMBER') {
     throw new UnauthorizedException('You do not have permission to update this resource. 🚫');
   }
 
@@ -138,7 +138,7 @@ export const getStaffApplicationsController = asyncHandler(async (req: Request, 
     throw new NotFoundException('User not found');
   }
 
-  if (user.role === 'interns') {
+  if (user.role === 'CORPS_MEMBER' || user.role === 'SIWES') {
     throw new UnauthorizedException('You do not have permission to view staff Applications 🚫');
   }
 
@@ -164,7 +164,7 @@ export const getStaffApplicationAnalysisController = asyncHandler(
       throw new NotFoundException('User not found');
     }
 
-    if (user.role === 'interns') {
+    if (user.role === 'CORPS_MEMBER' || user.role === 'SIWES') {
       throw new UnauthorizedException('Only staff can access application analysis data 🚫');
     }
 

@@ -264,7 +264,8 @@ export const getApplicationDetailsService = async (
 
   // Check permissions: either the applicant (corps member) or the staff
   const isOwner = applicant.userId.toString() === userId;
-  const isStaff = userRole === 'staff' && applicant.staffId.toString() === userId;
+  const isStaff =
+    (userRole === 'STAFF' || userRole === 'ADMIN') && applicant.staffId.toString() === userId;
 
   if (!isOwner && !isStaff) {
     throw new UnauthorizedException('You do not have permission to view this application');

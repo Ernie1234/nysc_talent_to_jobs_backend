@@ -86,9 +86,6 @@ export const LogoutController = asyncHandler(async (req: Request, res: Response)
   }
 });
 
-export const OnboardingController = asyncHandler(async (req: Request, res: Response) => {
-  res.send('Onboarding endpoint');
-});
 export const PasswordResetController = asyncHandler(async (req: Request, res: Response) => {
   res.send('Password reset endpoint');
 });
