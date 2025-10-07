@@ -26,7 +26,10 @@ const generateSessionCode = (): string => {
 };
 
 // Calculate attendance rate for a student
-const calculateAttendanceRate = async (studentId: string, courseId: string): Promise<number> => {
+export const calculateAttendanceRate = async (
+  studentId: string,
+  courseId: string
+): Promise<number> => {
   const course = await CourseModel.findById(courseId);
   if (!course) return 0;
 

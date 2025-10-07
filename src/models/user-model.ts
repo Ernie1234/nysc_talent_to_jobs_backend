@@ -29,6 +29,8 @@ export interface IDocument {
 
 // Enhanced profile interface
 export interface IUserProfile {
+  bankName?: string;
+  accountNumber?: string;
   phoneNumber?: string;
   stateOfService?: string;
   tertiarySchool?: string;
@@ -156,6 +158,14 @@ const userSchema = new Schema<IUser>(
       max: 5,
     },
     profile: {
+      bankName: {
+        type: String,
+        maxlength: [250, 'Bank name cannot exceed 250 characters'],
+      },
+      accountNumber: {
+        type: String,
+        maxlength: [20, 'Account number cannot exceed 20 characters'],
+      },
       phoneNumber: {
         type: String,
         match: [/^\+?[\d\s-()]+$/, 'Please enter a valid phone number'],

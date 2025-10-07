@@ -12,6 +12,8 @@ import {
   getCourseAttendanceController,
   dropCourseController,
   getCurrentEnrollmentController,
+  checkClearanceEligibilityController,
+  generatePerformanceClearanceController,
 } from '@/controllers/course-controller';
 
 const router = Router();
@@ -37,5 +39,9 @@ router.post('/:courseId/enroll', enrollCourseController);
 router.post('/:courseId/generate-qr', generateQrSessionController); // Staff only
 router.post('/scan-attendance', scanQrAttendanceController); // Corps members only
 router.get('/:courseId/attendance', getCourseAttendanceController); // Staff only
+
+// Performance clearance routes
+router.get('/:courseId/clearance/check', checkClearanceEligibilityController);
+router.get('/:courseId/clearance/download', generatePerformanceClearanceController);
 
 export default router;

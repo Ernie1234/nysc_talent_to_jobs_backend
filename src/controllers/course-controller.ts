@@ -23,6 +23,10 @@ import {
 } from '@/services/course-service';
 import { HTTPSTATUS } from '@/config/http-config';
 import { NotFoundException, UnauthorizedException } from '@/utils/app-error';
+import {
+  checkClearanceEligibility,
+  generatePerformanceClearance,
+} from '@/services/performance-clearance-service';
 
 export const createCourseController = asyncHandler(async (req: Request, res: Response) => {
   const courseData = createCourseSchema.parse(req.body);
@@ -236,3 +240,43 @@ export const getCurrentEnrollmentController = asyncHandler(async (req: Request, 
     data: course,
   });
 });
+
+export const generatePerformanceClearanceController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { courseId } = req.params;
+    const user = req.user;
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.role !== 'CORPS_MEMBER' && user.role !== 'SIWES') {
+      throw new UnauthorizedException('Only corps members can generate performance clearance');
+    }
+
+    await generatePerformanceClearance(user.id, courseId!, res);
+  }
+);
+
+export const checkClearanceEligibilityController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { courseId } = req.params;
+    const user = req.user;
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.role !== 'CORPS_MEMBER' && user.role !== 'SIWES') {
+      throw new UnauthorizedException('Only corps members can check clearance eligibility');
+    }
+
+    const eligibility = await checkClearanceEligibility(user.id, courseId!);
+
+    return res.status(HTTPSTATUS.OK).json({
+      success: true,
+      message: 'Eligibility checked successfully',
+      data: eligibility,
+    });
+  }
+);
