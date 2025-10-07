@@ -18,6 +18,8 @@ import {
   scanQrAttendanceService,
   getCourseAttendanceService,
   getPublishedCoursesService,
+  dropCourseService,
+  getCurrentEnrollmentService,
 } from '@/services/course-service';
 import { HTTPSTATUS } from '@/config/http-config';
 import { NotFoundException, UnauthorizedException } from '@/utils/app-error';
@@ -122,7 +124,7 @@ export const enrollCourseController = asyncHandler(async (req: Request, res: Res
 
   return res.status(HTTPSTATUS.OK).json({
     success: true,
-    message: 'Successfully enrolled in course',
+    message: 'Successfully enrolled in course. You can only be enrolled in one course at a time.',
     data: course,
   });
 });
@@ -192,5 +194,45 @@ export const getCourseAttendanceController = asyncHandler(async (req: Request, r
     success: true,
     message: 'Attendance data fetched successfully',
     data: attendanceData,
+  });
+});
+export const dropCourseController = asyncHandler(async (req: Request, res: Response) => {
+  const { courseId } = req.params;
+  const user = req.user;
+
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
+
+  if (user.role !== 'CORPS_MEMBER' && user.role !== 'SIWES') {
+    throw new UnauthorizedException('Only corps members can drop courses');
+  }
+
+  const course = await dropCourseService(courseId!, user.id);
+
+  return res.status(HTTPSTATUS.OK).json({
+    success: true,
+    message: 'Successfully dropped course',
+    data: course,
+  });
+});
+
+export const getCurrentEnrollmentController = asyncHandler(async (req: Request, res: Response) => {
+  const user = req.user;
+
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
+
+  if (user.role !== 'CORPS_MEMBER' && user.role !== 'SIWES') {
+    throw new UnauthorizedException('Only corps members can view enrollment');
+  }
+
+  const course = await getCurrentEnrollmentService(user.id);
+
+  return res.status(HTTPSTATUS.OK).json({
+    success: true,
+    message: 'Current enrollment fetched successfully',
+    data: course,
   });
 });

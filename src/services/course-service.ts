@@ -156,6 +156,18 @@ export const enrollCourseService = async (
     throw new BadRequestException('Student is already enrolled in this course');
   }
 
+  const existingEnrollment = await CourseModel.findOne({
+    enrolledStudents: new Types.ObjectId(studentId),
+    status: 'published',
+    _id: { $ne: new Types.ObjectId(courseId) }, // Exclude the current course
+  });
+  if (existingEnrollment) {
+    throw new BadRequestException(
+      // eslint-disable-next-line max-len
+      'You are already enrolled in another course. Please drop your current course before enrolling in a new one.'
+    );
+  }
+
   course.enrolledStudents.push(new Types.ObjectId(studentId));
   await course.save();
 
@@ -373,4 +385,35 @@ export const getPublishedCoursesService = async (
     page,
     totalPages: Math.ceil(total / limit),
   };
+};
+
+export const dropCourseService = async (courseId: string, studentId: string): Promise<ICourse> => {
+  const course = await CourseModel.findById(courseId);
+  if (!course) {
+    throw new NotFoundException('Course not found');
+  }
+
+  // Check if student is enrolled in this course
+  const isEnrolled = course.enrolledStudents.some(id => id.toString() === studentId);
+  if (!isEnrolled) {
+    throw new BadRequestException('You are not enrolled in this course');
+  }
+
+  // Remove student from enrolled students
+  course.enrolledStudents = course.enrolledStudents.filter(id => id.toString() !== studentId);
+
+  await course.save();
+
+  return course;
+};
+
+export const getCurrentEnrollmentService = async (studentId: string): Promise<ICourse | null> => {
+  const course = await CourseModel.findOne({
+    enrolledStudents: new Types.ObjectId(studentId),
+    status: 'published',
+  })
+    .populate('staffId', 'firstName lastName email staffProfile')
+    .select('-qrSessions');
+
+  return course;
 };

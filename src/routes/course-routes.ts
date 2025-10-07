@@ -10,6 +10,8 @@ import {
   generateQrSessionController,
   scanQrAttendanceController,
   getCourseAttendanceController,
+  dropCourseController,
+  getCurrentEnrollmentController,
 } from '@/controllers/course-controller';
 
 const router = Router();
@@ -22,9 +24,11 @@ router.post('/', createCourseController);
 router.get('/staff', getStaffCoursesController);
 router.get('/:courseId', getCourseController);
 router.put('/:courseId', updateCourseController);
+router.get('/enrollment/current', getCurrentEnrollmentController);
 
 // Published courses route (For students) - ADD THIS
 router.get('/', getPublishedCoursesController);
+router.delete('/:courseId/drop', dropCourseController);
 
 // Enrollment routes (Corps members only)
 router.post('/:courseId/enroll', enrollCourseController);
